@@ -1,0 +1,153 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="static3/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+<link href="static3/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
+<style>
+body {
+  padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+}
+</style>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  //google.load('visualization', '1', {packages: ['gauge']});
+  google.load('jquery', '1.7.0');
+</script>
+</head>
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a href="/" class="brand">TimeEngine</a>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li><a href="/namespaces.html">Namespaces</a></li>
+          <li><a href="/dashboards.html">Dasboards</a></li>
+          <li><a href="{{.Login}}">logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <h2>Namespace</h2>
+  <form>
+    <fieldset>
+      <legend>New Namespace</legend>
+      <label>Name</label>
+      <input type="text" class="input-xlarge" id="new-ns-name" placeholder="dot-separated path"></input>
+      <div>
+        <button type="submit" class="btn" onclick="newNamespace()">Create</button>
+      </div>
+    </fieldset>
+  </form>
+
+  <h3>List</h3>
+  <table id="namespace-table" class="table table-striped table-hover table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>First datapoint</th>
+        <th>Last</th>
+        <th>Secret</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="namespace-tbody"></tbody>
+  </table>
+
+
+  <h2>Push data</h2>
+  <p>
+    <a href="" id="cookie-link" download="timeengine.cookie">Download cookie</a> for authentication with desktop client.
+  </p>
+
+</div>
+
+<script src="static3/bootstrap/js/bootstrap.min.js"></script>
+<script>
+function newNamespace() {
+  var ns = document.getElementById('new-ns-name').value;
+  console.log(ns);
+
+  $.ajax({
+    url: "/namespace/new/",
+    data: {'ns': ns},
+  	dataType: 'json',
+  	success: function(d) {
+      refreshNamespaceTable();
+    },
+    error: function(d) {
+      console.log(d);
+      alert(d.responseText);
+    }
+  });
+}
+
+function refreshNamespaceTable() {
+  $.ajax({
+    url: "/namespace/list/",
+  	dataType: 'json',
+  	success: function(d) {
+      console.log(d);
+      var tb = document.createElement('tbody');
+      for (var i = 0; i < d.Namespaces.length; ++i) {
+        var ns = d.Namespaces[i];
+        var tr = document.createElement('tr');
+
+        var td = document.createElement('td');
+        td.textContent = ns.Name
+        tr.appendChild(td);
+
+        var td = document.createElement('td');
+        td.textContent = ns.First
+        tr.appendChild(td);
+
+        var td = document.createElement('td');
+        td.textContent = ns.Last
+        tr.appendChild(td);
+
+        var td = document.createElement('td');
+        var secret = document.createElement('a');
+        secret.onclick = (function(td, ns) {
+            return function() {
+              td.textContent = ns.Secret;
+              //alert("Use this secret to send metrics to this " +
+              //  "namespace: " + ns.Secret);
+              return false;
+            };
+        })(td, ns);
+        secret.href="";
+        secret.textContent = 'Reveal';
+        td.appendChild(secret);
+        tr.appendChild(td);
+
+        var td = document.createElement('td');
+        td.textContent = 'Delete';
+        tr.appendChild(td);
+
+        tb.appendChild(tr);
+      }
+      var table = document.getElementById('namespace-table');
+      table.replaceChild(
+        tb,
+        document.getElementById('namespace-tbody'));
+    },
+    error: function(d) {
+      console.log(d);
+      alert(d.responseText);
+    }
+  });
+}
+
+function setCookieLink() {
+  document.getElementById('cookie-link').href="data:text;charset=utf-8," + document.cookie;
+}
+
+refreshNamespaceTable();
+setCookieLink();
+</script>
+</body>
+</html>
