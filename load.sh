@@ -12,7 +12,7 @@ last=0
 while [ 1 ]; do
   n=`expr \( $RANDOM % 101 \) - 50`
   last=`expr $last + $n`
-  url="$server/put"
+  url="$server/api/put"
   data="{\"ns\":\"$ns\",\"nssecret\":\"$secret\",\"Pts\":[{\"r\":1,\"t\":`date +%s`,\"Vs\":[{\"m\":\"$metric\",\"v\":$last}]}]}"
   echo $data
   curl "$url" \

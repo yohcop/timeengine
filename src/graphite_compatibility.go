@@ -2,6 +2,7 @@ package timeengine
 
 import (
 	"encoding/json"
+  "strings"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -17,36 +18,40 @@ func dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	re := regexp.MustCompile("/dashboard/load/(.*)")
+	match := re.FindStringSubmatch(r.URL.Path)
+	name := match[1]
+
+	c := appengine.NewContext(r)
+	dashboard := getDashboard(c, name)
+	if dashboard == nil {
+		http.Error(w, "Dashboard not found", http.StatusBadRequest)
+		return
+	}
+
+	data := make([]*Graph, 0)
+	err = json.Unmarshal(dashboard.G, &data)
+	if err != nil {
+		http.Error(w, "Dashboard not found", http.StatusInternalServerError)
+		return
+	}
+
 	w.Write([]byte(`
   {
    "state":{
-      "name":"ycoppel1",
+      "name":"` + name + `",
       "graphs":[
+         `))
+	for _, g := range data {
+		w.Write([]byte(`
          [
-            "target=foo.bar.1",
+            "` + g.Name + `",
             {
-               "target":[
-                  "foo.bar.1"
-               ]
+               "target":["` + strings.Join(g.Targets, `","`) + `"]
             }
-         ],
-         [
-            "target=foo.bar.2",
-            {
-               "target":[
-                  "foo.bar.2"
-               ]
-            }
-         ],
-         [
-            "target=foo.bar.1&target=foo.bar.2",
-            {
-               "target":[
-                  "foo.bar.1",
-                  "foo.bar.2"
-               ]
-            }
-         ]
+         ]`))
+	}
+	w.Write([]byte(`
       ]
     }
   }
@@ -65,7 +70,7 @@ func render(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  now := time.Now().Unix()
+	now := time.Now().Unix()
 	until, err := strconv.ParseInt(r.FormValue("until"), 10, 64)
 	if err != nil || until > now {
 		until = now
@@ -80,8 +85,8 @@ func render(w http.ResponseWriter, r *http.Request) {
 
 	req := GetReq{}
 
-  // We only understand time spans in seconds. (second arg. to summarize)
-  // example: summarize(foo.bar, "15s", "avg")
+	// We only understand time spans in seconds. (second arg. to summarize)
+	// example: summarize(foo.bar, "15s", "avg")
 	re := regexp.MustCompile(
 		"summarize\\(\\W*([\\w.-]*)\\W*,\\W*\"([\\d]+)s\"\\W*,.*\\)")
 	for _, t := range targets {

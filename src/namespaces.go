@@ -24,7 +24,7 @@ func ValidNamespace(ns string) (string, error) {
 }
 
 func MetricName(ns, metric string) string {
-	return fmt.Sprintf("%s#%s", ns, metric)
+	return fmt.Sprintf("%s*%s", ns, metric)
 }
 
 func NsKey(c appengine.Context, ns string) *datastore.Key {

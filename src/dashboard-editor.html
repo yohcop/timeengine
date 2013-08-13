@@ -1,0 +1,34 @@
+{{define "dashboard-editor"}}
+{{template "header"}}
+
+<div class="container">
+  <h2>Edit</h2>
+  <input type='hidden' id='dash-name' value='{{.Name}}'></input>
+  <textarea id='dash-data' class="input-block-level" rows="10"
+  >{{.Graphs}}</textarea>
+  <button type="submit" class="btn" onclick="saveDashboard()">Save</button>
+</div>
+
+<script>
+function saveDashboard() {
+  var dash = document.getElementById('dash-name').value;
+  var d = document.getElementById('dash-data').value;
+  console.log(d);
+
+  var data = JSON.parse(d);
+
+  $.ajax({
+    url: "/api/dashboard/save/",
+    data: {'dashboard': dash, 'data': JSON.stringify(data)},
+  	dataType: 'json',
+  	success: function(d) {
+    },
+    error: function(d) {
+      console.log(d);
+      alert(d.responseText);
+    }
+  });
+}
+</script>
+{{template "footer"}}
+{{end}}
