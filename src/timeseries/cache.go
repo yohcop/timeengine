@@ -12,7 +12,7 @@ type WrappedP struct {
 	P     *P
 	HasPt bool
 
-  k string
+	k string
 }
 
 func getPtsFromCache(c appengine.Context, keys []string) (pts []*P, missing_keys []string) {

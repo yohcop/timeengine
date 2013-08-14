@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-  "users"
-  "dashboard"
+	"dashboard"
+	"users"
 
 	"appengine"
 )
@@ -69,7 +69,7 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rootTmpl.ExecuteTemplate(w, "dashboard-editor", &dashboardTmplData{
-    Tpl: rootTmplData{
+		Tpl: rootTmplData{
 			User:  user,
 			Login: users.LogoutURL(appengine.NewContext(r)),
 		},

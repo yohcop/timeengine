@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-  "users"
-  "namespace"
+	"namespace"
+	"users"
 
 	"appengine"
 )
@@ -19,15 +19,15 @@ type Vals struct {
 }
 
 type Points struct {
-	R        int
-	T        int64
-	Vs       []*Vals
+	R  int
+	T  int64
+	Vs []*Vals
 }
 
 type PutReq struct {
 	Ns       string
 	NsSecret string
-	Pts []*Points
+	Pts      []*Points
 }
 
 func PutDataPoints(w http.ResponseWriter, r *http.Request) {
@@ -47,11 +47,11 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := appengine.NewContext(r)
-  if !namespace.VerifyNamespace(c, req.Ns, req.NsSecret) {
+	if !namespace.VerifyNamespace(c, req.Ns, req.NsSecret) {
 		http.Error(w, "Missing or unknown namespace/secret",
-        http.StatusUnauthorized)
+			http.StatusUnauthorized)
 		return
-  }
+	}
 
 	ps := make([]*P, 0)
 	for _, p := range req.Pts {
@@ -123,4 +123,3 @@ func GetDataPoints(w http.ResponseWriter, r *http.Request) {
 	s, _ := json.Marshal(resp)
 	w.Write(s)
 }
-

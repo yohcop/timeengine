@@ -2,15 +2,15 @@ package compat
 
 import (
 	"encoding/json"
-  "strings"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
-  "users"
-  "dashboard"
-  "timeseries"
+	"dashboard"
+	"timeseries"
+	"users"
 
 	"appengine"
 	"net/http"
@@ -27,8 +27,8 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	name := match[1]
 
 	c := appengine.NewContext(r)
-	dash:= dashboard.GetDashboard(c, name)
-	if dash== nil {
+	dash := dashboard.GetDashboard(c, name)
+	if dash == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
 	}

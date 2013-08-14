@@ -26,13 +26,13 @@ func DashboardKey(c appengine.Context, name string) *datastore.Key {
 }
 
 func GetDashboard(c appengine.Context, name string) *Dashboard {
-  // No memcache for dashboards as long as we don't update the
-  // cache on edits.
-  /*
-	if item := getDashFromMemcache(c, name); item != nil {
-		return item
-	}
-  */
+	// No memcache for dashboards as long as we don't update the
+	// cache on edits.
+	/*
+		if item := getDashFromMemcache(c, name); item != nil {
+			return item
+		}
+	*/
 	return getDashFromDatastore(c, name)
 }
 

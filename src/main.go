@@ -3,11 +3,11 @@ package timeengine
 import (
 	"net/http"
 
-  "compat"
-  "dashboard"
-  "ui"
-  "timeseries"
-  "namespace"
+	"compat"
+	"dashboard"
+	"namespace"
+	"timeseries"
+	"ui"
 )
 
 func init() {

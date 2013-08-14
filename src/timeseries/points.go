@@ -116,14 +116,14 @@ func decodePointStrKey(k string, p *P) {
 
 func putRawPoints(c appengine.Context, pts []*P) error {
 	keys := make([]*datastore.Key, 0, len(pts))
-  for _, p := range pts {
-			keys = append(keys, key(c, p.m, selectTimeSlice(p.r), p.t))
-  }
+	for _, p := range pts {
+		keys = append(keys, key(c, p.m, selectTimeSlice(p.r), p.t))
+	}
 	_, err := datastore.PutMulti(c, keys, pts)
 	if err != nil {
 		return err
 	}
-  return nil
+	return nil
 }
 
 func getRawPoints(c appengine.Context, r TimeSlice, t, to int64, m string) ([]*P, error) {

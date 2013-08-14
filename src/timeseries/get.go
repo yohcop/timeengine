@@ -11,7 +11,7 @@ var _ = log.Println
 func GetData(c appengine.Context, req *GetReq) (*GetResp, error) {
 	resp := &GetResp{}
 	for _, serie := range req.Serie {
-    res := selectTimeSlice(serie.R)
+		res := selectTimeSlice(serie.R)
 		pts, err := getPoints(c, res, serie.T, serie.To, serie.M)
 		if err != nil {
 			return nil, err

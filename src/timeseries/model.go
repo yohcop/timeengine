@@ -29,17 +29,17 @@ type P struct {
 	// Value.
 	V float64 `datastore:",noindex"`
 
-  // The following unexported fields are not serialized, or stored
-  // in memcache, since they can be derived from the key name.
+	// The following unexported fields are not serialized, or stored
+	// in memcache, since they can be derived from the key name.
 
-  // Key
-  k string
+	// Key
+	k string
 	// Resolution, in seconds.
 	r int
 	// Timestamp, Unix time.
 	t int64
 	// Metric name.
 	m string
-  // Namespace.
-  ns string
+	// Namespace.
+	ns string
 }

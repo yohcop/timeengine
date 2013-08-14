@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-  "users"
+	"users"
 
 	"appengine"
 	"appengine/datastore"
@@ -38,7 +38,7 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 type DashboardResp struct {
-	Name   string
+	Name string
 }
 
 type DashboardListResp struct {
@@ -62,7 +62,7 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 	resp := &DashboardListResp{}
 	for i := range dashs {
 		resp.Dashboards = append(resp.Dashboards, &DashboardResp{
-			Name:   keys[i].StringID(),
+			Name: keys[i].StringID(),
 		})
 	}
 	s, _ := json.Marshal(resp)
@@ -81,7 +81,7 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  data := make([]*Graph, 0)
+	data := make([]*Graph, 0)
 	err = json.Unmarshal([]byte(r.FormValue("data")), &data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -90,12 +90,12 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 
 	c := appengine.NewContext(r)
 	dashboard := GetDashboard(c, d)
-  if dashboard == nil {
+	if dashboard == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
 	}
 
-  dashboard.G, _ = json.Marshal(data)
+	dashboard.G, _ = json.Marshal(data)
 
 	key := DashboardKey(c, d)
 	if _, err := datastore.Put(c, key, dashboard); err != nil {
