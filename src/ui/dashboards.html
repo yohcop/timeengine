@@ -3,6 +3,21 @@
 
 <div class="container">
   <h2>Dashboards</h2>
+  <form class="form-inline">
+    <fieldset>
+      <legend>Open</legend>
+      <div class="controls-row">
+        <label class="span2">Dashboard</label>
+        <label class="span2">With namespace</label>
+      </div>
+      <div class="controls-row">
+        <select class="span2" id="dashboard-list"></select>
+        <select class="span2" id="namespace-list"></select>
+        <button class="span1 btn btn-primary" type="submit" onclick="openDashboard(); return false;">Open</button>
+      </div>
+    </fieldset>
+  </form>
+
   <form>
     <fieldset>
       <legend>New dashboard</legend>
@@ -14,7 +29,7 @@
     </fieldset>
   </form>
 
-  <h3>List</h3>
+  <h2>List</h2>
   <table id="dashboards-table" class="table table-striped table-hover table-condensed">
     <thead>
       <tr>
@@ -26,6 +41,7 @@
   </table>
 </div>
 
+<script src="/static/api.js"></script>
 <script>
 function newDashboard() {
   var d = document.getElementById('new-dashboard-name').value;
@@ -44,34 +60,69 @@ function newDashboard() {
   });
 }
 
+function refreshTable(d) {
+  var tb = document.createElement('tbody');
+  for (var i = 0; i < d.Dashboards.length; ++i) {
+    var ns = d.Dashboards[i];
+    var tr = document.createElement('tr');
+
+    var td = document.createElement('td');
+    td.textContent = ns.Name
+    tr.appendChild(td);
+
+    var td = document.createElement('td');
+    var edit = document.createElement('a');
+    edit.href="/dashboard/edit?dashboard=" + ns.Name;
+    edit.textContent = 'Edit';
+    td.appendChild(edit);
+    tr.appendChild(td);
+
+    tb.appendChild(tr);
+  }
+  var table = document.getElementById('dashboards-table');
+  table.replaceChild(
+    tb,
+    document.getElementById('dashboards-tbody'));
+}
+
+function updateDropdown(id, list) {
+  $('#' + id).empty();
+  for (var i = 0; i < list.length; ++i) {
+    var name = list[i];
+    var el = document.createElement('option');
+    el.textContent = name;
+    el.value = name;
+    document.getElementById(id).appendChild(el);
+  }
+}
+
+function refreshDropdown(d) {
+  var l = [];
+  for (var i = 0; i < d.Dashboards.length; ++i) {
+    l[l.length] = d.Dashboards[i].Name;
+  }
+  updateDropdown('dashboard-list', l);
+}
+
+function refreshNamespaces() {
+  listNamespaces(function(d) {
+    var l = [];
+    for (var i = 0; i < d.Namespaces.length; ++i) {
+      l[l.length] = d.Namespaces[i].Name;
+    }
+    updateDropdown('namespace-list', l);
+  }, function(d) {
+  });
+}
+
 function refreshDashboardTable() {
   $.ajax({
     url: "/api/dashboard/list/",
   	dataType: 'json',
   	success: function(d) {
       console.log(d);
-      var tb = document.createElement('tbody');
-      for (var i = 0; i < d.Dashboards.length; ++i) {
-        var ns = d.Dashboards[i];
-        var tr = document.createElement('tr');
-
-        var td = document.createElement('td');
-        td.textContent = ns.Name
-        tr.appendChild(td);
-
-        var td = document.createElement('td');
-        var edit = document.createElement('a');
-        edit.href="/dashboard/edit?dashboard=" + ns.Name;
-        edit.textContent = 'Edit';
-        td.appendChild(edit);
-        tr.appendChild(td);
-
-        tb.appendChild(tr);
-      }
-      var table = document.getElementById('dashboards-table');
-      table.replaceChild(
-        tb,
-        document.getElementById('dashboards-tbody'));
+      refreshTable(d);
+      refreshDropdown(d);
     },
     error: function(d) {
       console.log(d);
@@ -80,7 +131,15 @@ function refreshDashboardTable() {
   });
 }
 
+function openDashboard() {
+  var dash = $('#dashboard-list').val();
+  var namespace = $('#namespace-list').val();
+  var url = "/static/dash.html#" + dash + "&namespace=" + namespace;
+  window.open(url);
+}
+
 refreshDashboardTable();
+refreshNamespaces();
 </script>
 {{template "footer"}}
 {{end}}

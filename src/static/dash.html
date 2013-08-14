@@ -173,7 +173,7 @@ function mkgraph(els, targets) {
 }
 
 function pollUrl(from, to, summarize) {
-  if (all_targets.length == 0) {
+  if (Object.keys(all_targets).length == 0) {
     return null;
   }
   var left = 0;
@@ -189,6 +189,7 @@ function pollUrl(from, to, summarize) {
 
   var targets_q = "";
   for (var k in all_targets) {
+    k = addNamespaceToTarget(k);
     if (!summarize) {
       targets_q += "&target=" + k;
     } else {
@@ -219,6 +220,7 @@ function update(url) {
         if (is_summary) {
           name = is_summary[1];
         }
+        name = removeNamespaceFromTarget(name);
         var points = series.datapoints;
         var ny = [];
         for (var pi = 0; pi < points.length; ++pi) {
@@ -504,7 +506,7 @@ function setupDashboard() {
         //if (gi != 1) continue;
         var cfg = d.state.graphs[gi];
         var title = cfg[0];
-        var targets = addNamespaceToTargets(cfg[1].target);
+        var targets = cfg[1].target;
         var els = createChartEl();
         mkgraph(els, targets);
       }
@@ -513,13 +515,18 @@ function setupDashboard() {
   });
 }
 
-function addNamespaceToTargets(targets) {
+function addNamespaceToTarget(t) {
   if (opts.namespace.length > 0) {
-    for (var ti = 0; ti < targets.length; ++ti) {
-      targets[ti] = opts.namespace + '*' + targets[ti];
-    }
+    return opts.namespace + '*' + t;
   }
-  return targets;
+  return t;
+}
+
+function removeNamespaceFromTarget(t) {
+  if (opts.namespace.length > 0) {
+    return t.slice(opts.namespace.length + 1);
+  }
+  return t;
 }
 
 // from and to in milliseconds

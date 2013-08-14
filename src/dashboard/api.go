@@ -95,7 +95,7 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dashboard.G, _ = json.Marshal(data)
+	dashboard.G, _ = json.MarshalIndent(data, "", "\t")
 
 	key := DashboardKey(c, d)
 	if _, err := datastore.Put(c, key, dashboard); err != nil {

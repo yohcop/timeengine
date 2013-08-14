@@ -1,12 +1,27 @@
 {{define "dashboard-editor"}}
-{{with .Tpl}}{{template "header"}}{{end}}
+{{template "header" .Tpl}}
 
 <div class="container">
-  <h2>Edit</h2>
+  <h2>Dashboard edit</h2>
   <input type='hidden' id='dash-name' value='{{.Name}}'></input>
-  <textarea id='dash-data' class="input-block-level" rows="10"
+  <textarea id='dash-data' class="input-block-level" rows="25"
   >{{.Graphs}}</textarea>
-  <button type="submit" class="btn" onclick="saveDashboard()">Save</button>
+  <button type="submit" class="btn" onclick="saveDashboard()">Save</button> (You can auto-indent by saving and refreshing the page)
+
+  <h3>Example</h3>
+  <p>Note: never add a trailing <code>,</code> after last dictionary or array element.</p>
+<pre>
+[
+  {
+    "name": "first graph",
+    "targets": [ "one.metric", "another.metric" ]
+  },
+  {
+    "name": "second graph",
+    "targets": [ "just.one.metric" ]
+  }
+]
+</pre>
 </div>
 
 <script>
@@ -15,7 +30,12 @@ function saveDashboard() {
   var d = document.getElementById('dash-data').value;
   console.log(d);
 
-  var data = JSON.parse(d);
+  try {
+    var data = JSON.parse(d);
+  } catch (e) {
+    alert(e);
+    return;
+  }
 
   $.ajax({
     url: "/api/dashboard/save/",

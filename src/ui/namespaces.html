@@ -36,6 +36,7 @@
 
 </div>
 
+<script src="/static/api.js"></script>
 <script>
 function newNamespace() {
   var ns = document.getElementById('new-ns-name').value;
@@ -56,10 +57,8 @@ function newNamespace() {
 }
 
 function refreshNamespaceTable() {
-  $.ajax({
-    url: "/api/namespace/list/",
-  	dataType: 'json',
-  	success: function(d) {
+  listNamespaces(
+  	function(d) {
       console.log(d);
       var tb = document.createElement('tbody');
       for (var i = 0; i < d.Namespaces.length; ++i) {
@@ -104,11 +103,11 @@ function refreshNamespaceTable() {
         tb,
         document.getElementById('namespace-tbody'));
     },
-    error: function(d) {
+    function(d) {
       console.log(d);
       alert(d.responseText);
     }
-  });
+  );
 }
 
 function setCookieLink() {
