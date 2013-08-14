@@ -1,4 +1,4 @@
-package timeengine
+package compat
 
 import (
 	"encoding/json"
@@ -8,12 +8,16 @@ import (
 	"strconv"
 	"time"
 
+  "users"
+  "dashboard"
+  "timeseries"
+
 	"appengine"
 	"net/http"
 )
 
-func dashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func Dashboard(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -23,14 +27,14 @@ func dashboard(w http.ResponseWriter, r *http.Request) {
 	name := match[1]
 
 	c := appengine.NewContext(r)
-	dashboard := getDashboard(c, name)
-	if dashboard == nil {
+	dash:= dashboard.GetDashboard(c, name)
+	if dash== nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
 	}
 
-	data := make([]*Graph, 0)
-	err = json.Unmarshal(dashboard.G, &data)
+	data := make([]*dashboard.Graph, 0)
+	err = json.Unmarshal(dash.G, &data)
 	if err != nil {
 		http.Error(w, "Dashboard not found", http.StatusInternalServerError)
 		return
@@ -58,8 +62,8 @@ func dashboard(w http.ResponseWriter, r *http.Request) {
   `))
 }
 
-func render(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func Render(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -83,7 +87,7 @@ func render(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := GetReq{}
+	req := timeseries.GetReq{}
 
 	// We only understand time spans in seconds. (second arg. to summarize)
 	// example: summarize(foo.bar, "15s", "avg")
@@ -101,7 +105,7 @@ func render(w http.ResponseWriter, r *http.Request) {
 			}
 			t = match[1]
 		}
-		s := &SerieDef{
+		s := &timeseries.SerieDef{
 			R:  r,
 			T:  from,
 			To: until,
@@ -111,7 +115,7 @@ func render(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := appengine.NewContext(r)
-	resp, err := getData(c, &req)
+	resp, err := timeseries.GetData(c, &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

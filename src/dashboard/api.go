@@ -1,15 +1,17 @@
-package timeengine
+package dashboard
 
 import (
 	"encoding/json"
 	"net/http"
 
+  "users"
+
 	"appengine"
 	"appengine/datastore"
 )
 
-func newDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func NewDashboard(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -22,7 +24,7 @@ func newDashboard(w http.ResponseWriter, r *http.Request) {
 
 	c := appengine.NewContext(r)
 	// Check if the dashboard already exists.
-	if getDashboard(c, d) != nil {
+	if GetDashboard(c, d) != nil {
 		http.Error(w, "Dashboard exists", http.StatusBadRequest)
 		return
 	}
@@ -43,8 +45,8 @@ type DashboardListResp struct {
 	Dashboards []*DashboardResp
 }
 
-func listDashboards(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func ListDashboards(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -67,8 +69,8 @@ func listDashboards(w http.ResponseWriter, r *http.Request) {
 	w.Write(s)
 }
 
-func saveDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func SaveDashboard(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -87,7 +89,7 @@ func saveDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := appengine.NewContext(r)
-	dashboard := getDashboard(c, d)
+	dashboard := GetDashboard(c, d)
   if dashboard == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return

@@ -1,4 +1,4 @@
-package timeengine
+package namespace
 
 import (
 	"errors"

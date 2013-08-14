@@ -1,16 +1,18 @@
-package timeengine
+package namespace
 
 import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
 
+  "users"
+
 	"appengine"
 	"appengine/datastore"
 )
 
-func newNs(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func NewNamespace(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}
@@ -51,8 +53,8 @@ type NsListResp struct {
 	Namespaces []*Namespace
 }
 
-func listNs(w http.ResponseWriter, r *http.Request) {
-	user, err := AuthUser(w, r)
+func ListNamespaces(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return
 	}

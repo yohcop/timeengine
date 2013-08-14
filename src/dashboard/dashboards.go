@@ -1,4 +1,4 @@
-package timeengine
+package dashboard
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ func DashboardKey(c appengine.Context, name string) *datastore.Key {
 	return datastore.NewKey(c, "Dash", name, 0, nil)
 }
 
-func getDashboard(c appengine.Context, name string) *Dashboard {
+func GetDashboard(c appengine.Context, name string) *Dashboard {
   // No memcache for dashboards as long as we don't update the
   // cache on edits.
   /*

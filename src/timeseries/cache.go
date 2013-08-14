@@ -1,4 +1,4 @@
-package timeengine
+package timeseries
 
 import (
 	"appengine"
