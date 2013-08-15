@@ -1,4 +1,4 @@
-application: timeengine
+application: thetimeengine
 version: 1
 runtime: go
 api_version: go1
@@ -9,7 +9,7 @@ handlers:
   static_dir: static
 
 - url: /static3
-  static_dir: ../third_party/
+  static_dir: third_party/
 
 - url: /.*
   script: _go_app
