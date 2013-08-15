@@ -25,7 +25,8 @@ type TimeSlice int
 // 1 week: ~20 minutes intervals.
 // 1 day: ~2.5 minutes intervals.
 var AvailableAggregatesSecs = []TimeSlice{
-	1 * s,
+  //      // secs  | /day
+	1 * s,  // 1     |
 
 	1 * m,  // 60    | 1440 => 7200
 	15 * m, // 900   | 360  => 7560

@@ -7,8 +7,8 @@ body{
   margin-top:60px;
 }
 .graph{
-  width:650px;
-  height: 270px;
+  /*width:650px;
+  height: 300px;*/
   display:inline-block;
   margin-bottom: 10px;
 }
@@ -42,7 +42,6 @@ body{
 }
 .graph-container{
   display:inline-block;
-  width:650px;
   text-align:right;
   border:1px solid #ccc;
   margin: 10px;
@@ -113,6 +112,9 @@ var opts = {
   live_updates: true,
   initial_fetch: '-3s',
 
+  graph_width: '640',
+  graph_height: '300',
+
   // Preloading
   from: 0,
   to: 0,
@@ -145,7 +147,7 @@ function drawCallback(me, initial) {
   blockRedraw = false;
 }
 
-function mkgraph(els, targets) {
+function mkgraph(els, targets, title) {
   var labels = ['x'];
   for (var t in targets) {
     labels.push(targets[t]);
@@ -158,6 +160,9 @@ function mkgraph(els, targets) {
     drawCallback: drawCallback,
     legend: 'always',
     labelsDiv: els.legend,
+    title: title,
+    width: opts.graph_width,
+    height: opts.graph_height,
     //showRangeSelector: true,
     //rangeSelectorHeight: 30,
     //strokeBorderWidth: 2,
@@ -204,8 +209,18 @@ function pollUrl(from, to, summarize) {
 }
 
 function update(url) {
+  timer = null;
+  var start_update = new Date().valueOf();
+  var bye = function() {
+    var end_update = new Date().valueOf();
+    setupUpdates(1000 - (end_update - start_update));
+  }
+
   if (!url) url = pollUrl();
-  if (!url) return;
+  if (!url) {
+    bye();
+    return;
+  }
   $.ajax({
     url: url,
 		dataType: 'jsonp',
@@ -238,10 +253,12 @@ function update(url) {
       }
 
       rebuildGraphs(new_data, prev_last);
+      bye();
     },
     error: function(e) {
       console.log("ERROR");
       console.log(e);
+      bye();
     },
   });
 }
@@ -379,13 +396,20 @@ function toggleUpdates() {
   setupUpdates();
 }
 
-function setupUpdates() {
+function setupUpdates(ms) {
   if (opts.live_updates) {
     if (!timer) {
-      timer = setInterval(update, 1000);
+      ms = ms != undefined ? ms : 1000;
+      if (ms < 100) {
+        // Still use a timout, so we don't grow the call stack
+        // constantly, and dont' overload the server.
+        ms = 100
+      }
+      timer = setTimeout(update, ms);
     }
   } else if (timer) {
-    clearInterval(timer);
+    console.log("unset");
+    clearTimeout(timer);
     timer = null;
   }
 }
@@ -492,7 +516,7 @@ function setupTestDashboard() {
       opts.test_metric,
   ];
   var els = createChartEl();
-  mkgraph(els, targets);
+  mkgraph(els, targets, "test");
   finishSetup();
 }
 
@@ -508,10 +532,13 @@ function setupDashboard() {
         var title = cfg[0];
         var targets = cfg[1].target;
         var els = createChartEl();
-        mkgraph(els, targets);
+        mkgraph(els, targets, title);
       }
       finishSetup();
     },
+    error: function(e) {
+      console.log("error", e);
+    }
   });
 }
 
@@ -566,7 +593,9 @@ function shareUrl(full_res) {
   var from = new Date(range[0]).toISOString();
   var to = new Date(range[1]).toISOString();
   console.log(from, to);
-  var url = '#' + opts.dashboard + '&from=' + from + '&to=' + to;
+  var url = '#' + opts.dashboard +
+    '&namespace=' + opts.namespace +
+    '&from=' + from + '&to=' + to;
   if (full_res) {
     url += '&full_res_preload=true';
   }

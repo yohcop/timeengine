@@ -9,7 +9,7 @@
       <label>Name</label>
       <input type="text" class="input-xlarge" id="new-ns-name" placeholder="dot-separated path"></input>
       <div>
-        <button type="submit" class="btn" onclick="newNamespace()">Create</button>
+        <button type="submit" class="btn" onclick="newNamespace(); return false;">Create</button>
       </div>
     </fieldset>
   </form>
@@ -19,8 +19,8 @@
     <thead>
       <tr>
         <th>Namespace</th>
-        <th>First datapoint</th>
-        <th>Last</th>
+        <!--th>First datapoint</th>
+        <th>Last</th-->
         <th>Secret</th>
         <th>Actions</th>
       </tr>
@@ -47,7 +47,7 @@ function newNamespace() {
     data: {'ns': ns},
   	dataType: 'json',
   	success: function(d) {
-      refreshNamespaceTable();
+      setTimeout(refreshNamespaceTable, 100);
     },
     error: function(d) {
       console.log(d);
@@ -61,6 +61,7 @@ function refreshNamespaceTable() {
   	function(d) {
       console.log(d);
       var tb = document.createElement('tbody');
+      tb.id='namespace-tbody';
       for (var i = 0; i < d.Namespaces.length; ++i) {
         var ns = d.Namespaces[i];
         var tr = document.createElement('tr');
@@ -69,6 +70,7 @@ function refreshNamespaceTable() {
         td.textContent = ns.Name
         tr.appendChild(td);
 
+        /*
         var td = document.createElement('td');
         td.textContent = ns.First
         tr.appendChild(td);
@@ -76,6 +78,7 @@ function refreshNamespaceTable() {
         var td = document.createElement('td');
         td.textContent = ns.Last
         tr.appendChild(td);
+        */
 
         var td = document.createElement('td');
         var secret = document.createElement('a');

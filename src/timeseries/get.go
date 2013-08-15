@@ -16,11 +16,13 @@ func GetData(c appengine.Context, req *GetReq) (*GetResp, error) {
 		if err != nil {
 			return nil, err
 		}
+    maxPoints := int(serie.To-serie.T)/int(res)
 		s := &SerieData{
 			Target: serie.M,
-			Datapoints: make([]*DataPoint, 0,
-				int(serie.To-serie.T)/int(res)),
+			Datapoints: make([]*DataPoint, 0, maxPoints),
 		}
+    //log.Printf("Got %d points @%d, prepared for %d: %d\n",
+    //    len(pts), int(res), maxPoints, serie.To - serie.T)
 		last := serie.T
 		for _, p := range pts {
 			addMissing(last, p.t, res, s)

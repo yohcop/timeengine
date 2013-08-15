@@ -2,7 +2,6 @@ package compat
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,13 +39,12 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(`
-  {
+	w.Write([]byte(`{
    "state":{
       "name":"` + name + `",
       "graphs":[
          `))
-	for _, g := range data {
+	for i, g := range data {
 		w.Write([]byte(`
          [
             "` + g.Name + `",
@@ -54,6 +52,9 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
                "target":["` + strings.Join(g.Targets, `","`) + `"]
             }
          ]`))
+    if i < len(data) - 1 {
+      w.Write([]byte(","))
+    }
 	}
 	w.Write([]byte(`
       ]
@@ -92,10 +93,9 @@ func Render(w http.ResponseWriter, r *http.Request) {
 	// We only understand time spans in seconds. (second arg. to summarize)
 	// example: summarize(foo.bar, "15s", "avg")
 	re := regexp.MustCompile(
-		"summarize\\(\\W*([\\w.-]*)\\W*,\\W*\"([\\d]+)s\"\\W*,.*\\)")
+		"summarize\\(\\W*([\\w\\*.-]*)\\W*,\\W*\"([\\d]+)s\"\\W*,.*\\)")
 	for _, t := range targets {
 		match := re.FindStringSubmatch(t)
-		w.Write([]byte(fmt.Sprintf("// %q\n", match)))
 		r := 1
 		if len(match) == 3 {
 			r, err = strconv.Atoi(match[2])
