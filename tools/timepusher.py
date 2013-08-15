@@ -16,7 +16,7 @@ namespace='test.namespace'
 nssecret='5fbbd6p84o'
 min_wait_in_sec=1
 server='http://localhost:8080'
-cookie_file='/home/leppoc/Downloads/timeengine (2).cookie'
+cookie_file='/tmp/cookie'
 
 #### End flags
 
@@ -27,7 +27,12 @@ def send(obj):
   opener = urllib2.build_opener()
   opener.addheaders.append(('Cookie', cookie_file_content))
   opener.addheaders.append(('User-agent', 'timepusher'))
-  r = opener.open(push_url, json.dumps(obj))
+  d = json.dumps(obj)
+  try:
+    r = opener.open(push_url, d)
+    print r.getcode()
+  except urllib2.URLError, e:
+    print e
 
 def make_data(lines):
   data={
