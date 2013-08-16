@@ -52,9 +52,9 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
                "target":["` + strings.Join(g.Targets, `","`) + `"]
             }
          ]`))
-    if i < len(data) - 1 {
-      w.Write([]byte(","))
-    }
+		if i < len(data)-1 {
+			w.Write([]byte(","))
+		}
 	}
 	w.Write([]byte(`
       ]

@@ -19,7 +19,6 @@ type Vals struct {
 }
 
 type Points struct {
-	R  int
 	T  int64
 	Vs []*Vals
 }
@@ -59,7 +58,6 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 			p := &P{
 				V: v.V,
 				t: p.T,
-				r: p.R,
 				m: namespace.MetricName(req.Ns, v.M),
 			}
 			ps = append(ps, p)

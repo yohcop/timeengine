@@ -16,33 +16,29 @@ func GetData(c appengine.Context, req *GetReq) (*GetResp, error) {
 		if err != nil {
 			return nil, err
 		}
-    maxPoints := int(serie.To-serie.T)/int(res)
+		maxPoints := int(serie.To-serie.T) / int(res)
 		s := &SerieData{
-			Target: serie.M,
+			Target:     serie.M,
 			Datapoints: make([]*DataPoint, 0, maxPoints),
 		}
-    //log.Printf("Got %d points @%d, prepared for %d: %d\n",
-    //    len(pts), int(res), maxPoints, serie.To - serie.T)
-		last := serie.T
+		//log.Printf("Got %d points @%d, prepared for %d: %d\n",
+		//    len(pts), int(res), maxPoints, serie.To - serie.T)
 		for _, p := range pts {
-			addMissing(last, p.t, res, s)
 			t := float64(p.t)
 			v := &p.V
 			s.Datapoints = append(
 				s.Datapoints, &DataPoint{v, &t})
-			last = p.t
 		}
-		addMissing(last, serie.To+int64(res), res, s)
 		resp.Series = append(resp.Series, s)
 	}
 	return resp, nil
 }
 
-func getPoints(c appengine.Context, r TimeSlice, t, to int64, m string) ([]*P, error) {
+func getPoints(c appengine.Context, r TimeSlice, from, to int64, m string) ([]*P, error) {
 	if int(r) == 1 {
-		return getRawPoints(c, r, t, to, m)
+		return getRawPoints(c, from, to, m)
 	}
-	return genAggregate(c, r, t, to, m, Avg)
+	return genAggregate(c, r, from, to, m, Avg)
 }
 
 func addMissing(from, to int64, res TimeSlice, s *SerieData) {

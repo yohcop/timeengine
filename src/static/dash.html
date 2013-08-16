@@ -209,9 +209,15 @@ function pollUrl(from, to, summarize) {
 }
 
 function update(url) {
+  // TODO: wrap update in another function that calls setupUpdates
+  // correctly, instead of the hack of looking if url is defined.
+  var outOfBand = (url != undefined);
   timer = null;
   var start_update = new Date().valueOf();
   var bye = function() {
+    if (outOfBand) {
+      return;
+    }
     var end_update = new Date().valueOf();
     setupUpdates(1000 - (end_update - start_update));
   }

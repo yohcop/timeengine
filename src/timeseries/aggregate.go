@@ -25,10 +25,12 @@ func Avg(pts []*P) *float64 {
 
 func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f AggFunc) ([]*P, error) {
 	if ts == 1 {
-		return getRawPoints(c, ts, from, to, m)
+		return getRawPoints(c, from, to, m)
 	}
 	//log.Printf("GenAggregate @%d [%d, %d], %s\n", ts, from, to, m)
-	keys := genKeyIDs(m, ts, from, to)
+	keys := genCacheKeyIDs(m, ts, from, to)
+	//log.Printf("%s: %d keys @%d to check from the cache\n",
+	//    m, len(keys), ts)
 	pts := []*P{}
 	missing_keys := []string{}
 	if ts.Memcached() {
@@ -38,13 +40,18 @@ func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f
 		missing_keys = keys
 	}
 
-	log.Printf("We need to generate %d missing aggregates\n",
-		len(missing_keys))
 	newPts := make([]*WrappedP, 0, len(missing_keys))
 	lower := lowerTimeSlice(ts)
 	now := time.Now().Unix()
+	//log.Printf("We need to generate %d missing aggregates. res: %d, lower: %d\n",
+	//	len(missing_keys), ts, lower)
 	for _, k := range missing_keys {
-		_, _, t, _ := decodeKey(k)
+		//log.Printf("Generating %s\n", k)
+		_, _, t, err := decodeCacheKey(k)
+		if err != nil {
+			//log.Printf("Error for key %s: %s\n", k, err.Error())
+			continue
+		}
 		to := t + int64(ts)
 		lowerPts, _ := genAggregate(c, lower, t, to, m, f)
 		v := f(lowerPts)
@@ -60,8 +67,7 @@ func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f
 		} else {
 			wp.HasPt = false
 		}
-		// TODO: Do not store if in newPts if they are too close to
-		// <now>
+		// Do not store if in newPts if they are too close to <now>
 		if t < now-int64(ts) {
 			newPts = append(newPts, wp)
 		}
@@ -71,7 +77,8 @@ func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f
 	if ts.Memcached() {
 		addPtsInCache(c, newPts)
 	}
-	log.Printf("Number of points: %d\n", len(pts))
+	//log.Printf("Number of points: %d\n", len(pts))
+	//log.Printf("%#v\n", pts[0])
 	sortPtsByDate(pts)
 	return pts, nil
 }
