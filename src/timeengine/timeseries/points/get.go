@@ -9,7 +9,7 @@ import (
 var _ = log.Println
 
 func GetPoints(c ae.Context, metric string, span *Span) ([]StatsDataPoint, error) {
-	if span.fs.Secs() == 0 && span.to.Ts() - span.from.Ts() <= 120 {
+	if span.fs.Secs() == 0 || span.to.Ts() - span.from.Ts() <= 120 {
 		return getRawPoints(c, metric, span.from.Ts(), span.to.Ts())
 	}
 	return getFromFrames(c, metric, span)
