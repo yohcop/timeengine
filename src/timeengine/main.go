@@ -3,11 +3,11 @@ package timeengine
 import (
 	"net/http"
 
-	"compat"
-	"dashboard"
-	"namespace"
-	"timeseries"
-	"ui"
+	"timeengine/compat"
+	"timeengine/dashboard"
+	"timeengine/namespace"
+	"timeengine/timeseries"
+	"timeengine/ui"
 )
 
 func init() {
@@ -32,4 +32,7 @@ func init() {
 	// get a dashboard, and a tiny subset of the json renderer.
 	http.HandleFunc("/dashboard/load/", compat.Dashboard)
 	http.HandleFunc("/render/", compat.Render)
+
+  // Task queues handlers
+  http.HandleFunc("/tasks/aggregateminute", timeseries.Aggregate60sTask)
 }

@@ -51,7 +51,7 @@ function newDashboard() {
     data: {'dashboard': d},
   	dataType: 'json',
   	success: function(d) {
-      refreshDashboardTable();
+      setTimeout(refreshDashboardTable, 100);
     },
     error: function(d) {
       console.log(d);

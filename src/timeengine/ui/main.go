@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"dashboard"
-	"users"
+	"timeengine/dashboard"
+	"timeengine/users"
 
 	"appengine"
 )
 
-var rootTmpl = template.Must(template.ParseGlob("ui/*.html"))
+var rootTmpl = template.Must(template.ParseGlob("timeengine/ui/*.html"))
 
 type rootTmplData struct {
 	User  *users.User

@@ -110,7 +110,7 @@ var opts = {
 
   sync_graphs: true,
   live_updates: true,
-  initial_fetch: '-3s',
+  initial_fetch: '-10s',
 
   graph_width: '640',
   graph_height: '300',
@@ -125,7 +125,7 @@ var opts = {
 var all_graphs = [];
 var first = Math.ceil(new Date().valueOf() / 1000);
 var last = Math.ceil(new Date().valueOf() / 1000);
-var min_freq = 60;
+var min_freq = 10;
 // Dygraph -> object{g, targets, data}
 var graphs = [];
 // target -> true

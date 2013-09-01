@@ -1,0 +1,4 @@
+cron:
+- description: Update minute frames
+  url: /tasks/aggregateminute
+  schedule: every 1 minutes

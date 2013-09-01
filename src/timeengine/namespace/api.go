@@ -4,12 +4,17 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
+  "time"
 
-	"users"
+	"timeengine/users"
 
 	"appengine"
 	"appengine/datastore"
 )
+
+func init() {
+  rand.Seed(time.Now().UnixNano())
+}
 
 func NewNamespace(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)

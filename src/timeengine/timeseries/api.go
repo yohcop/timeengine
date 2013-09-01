@@ -5,8 +5,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"namespace"
-	"users"
+  "timeengine/ae/impl"
+	"timeengine/namespace"
+	"timeengine/users"
+  "timeengine/timeseries/points"
 
 	"appengine"
 )
@@ -52,19 +54,15 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ps := make([]*P, 0)
+	ps := make([]*points.P, 0)
 	for _, p := range req.Pts {
 		for _, v := range p.Vs {
-			p := &P{
-				V: v.V,
-				t: p.T,
-				m: namespace.MetricName(req.Ns, v.M),
-			}
+			p := points.NewP(v.V, p.T, namespace.MetricName(req.Ns, v.M))
 			ps = append(ps, p)
 		}
 	}
 
-	err = putRawPoints(c, ps)
+	err = points.PutRawPoints(&impl.Appengine{c}, ps)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -74,7 +72,7 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 // Get =========================================================
 
 type SerieDef struct {
-	R  int
+	R  int64
 	T  int64
 	To int64
 	M  string
@@ -113,7 +111,7 @@ func GetDataPoints(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := appengine.NewContext(r)
-	resp, err := GetData(c, &req)
+	resp, err := GetData(&impl.Appengine{c}, &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

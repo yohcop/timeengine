@@ -1,0 +1,4 @@
+
+queue:
+- name: aggregate
+  rate: 1/s

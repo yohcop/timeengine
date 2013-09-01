@@ -4,13 +4,11 @@ runtime: go
 api_version: go1
 
 handlers:
-
 - url: /static
-  static_dir: static
+  static_dir: timeengine/static/
 
 - url: /static3
   static_dir: third_party/
 
 - url: /.*
   script: _go_app
-

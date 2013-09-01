@@ -12,9 +12,9 @@ import urllib2
 import fileinput
 import json
 
-namespace='test.namespace'
-nssecret='5fbbd6p84o'
-min_wait_in_sec=1
+namespace='my.namespace'
+nssecret='5p7oparwpa'
+min_wait_in_sec=0
 server='http://localhost:8080'
 cookie_file='/tmp/cookie'
 
@@ -107,6 +107,8 @@ def pusher():
 
     end_time = time.clock()
     to_sleep = min_wait_in_sec - (end_time - start_time)
+    if to_sleep < 0:
+      to_sleep = 0
     time.sleep(to_sleep)
 
 

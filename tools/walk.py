@@ -8,8 +8,8 @@ import time
 import sys
 
 pause=1
-num_metrics=10
-max_out=72*60*60
+num_metrics=3
+max_out=24*60*60
 time_delta=-72*60*60
 live=True
 
@@ -19,7 +19,7 @@ def walk(n):
 
 # Main =============================
 vals=[0] * num_metrics
-time_start=int(time.time())-time_delta
+time_start=int(time.time())+time_delta
 while max_out > 0:
   for i, v in enumerate(vals):
     if live:

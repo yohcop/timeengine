@@ -1,5 +1,6 @@
 package timeseries
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -20,10 +21,6 @@ type WrappedP struct {
 	k string
 }
 
-func cacheKeyAt(m string, r TimeSlice, t int64) string {
-	return fmt.Sprintf("%s@%d@%d", m, r, slice(r, t))
-}
-
 func decodeCacheKey(k string) (m string, r int, t int64, err error) {
 	parts := strings.Split(k, "@")
 	if len(parts) == 3 {
@@ -42,25 +39,6 @@ func decodeCachePointStrKey(k string, p *P) {
 		p.m = m
 		p.t = t
 	}
-}
-
-// Generate all the memcache keys in between from and to at the given
-// resolution
-func genCacheKeyIDs(m string, r TimeSlice, from, to int64) []string {
-	last := slice(r, to)
-	keys := make([]string, 0, numPoints(from, to, r))
-	for at := slice(r, from); at < last; at += int64(r) {
-		keys = append(keys, cacheKeyAt(m, r, at))
-	}
-	return keys
-}
-
-func slice(r TimeSlice, at int64) int64 {
-	return at - (at % int64(r))
-}
-
-func numPoints(from, to int64, res TimeSlice) int {
-	return int(slice(res, to)-slice(res, from)) / int(res)
 }
 
 func getPtsFromCache(c appengine.Context, keys []string) (pts []*P, missing_keys []string) {
@@ -103,3 +81,4 @@ func addPtsInCache(c appengine.Context, pts []*WrappedP) {
 	}
 	memcache.AddMulti(c, items)
 }
+*/

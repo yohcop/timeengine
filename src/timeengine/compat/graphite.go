@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"dashboard"
-	"timeseries"
-	"users"
+  "timeengine/ae/impl"
+	"timeengine/dashboard"
+	"timeengine/timeseries"
+	"timeengine/users"
 
 	"appengine"
 	"net/http"
@@ -96,9 +97,9 @@ func Render(w http.ResponseWriter, r *http.Request) {
 		"summarize\\(\\W*([\\w\\*.-]*)\\W*,\\W*\"([\\d]+)s\"\\W*,.*\\)")
 	for _, t := range targets {
 		match := re.FindStringSubmatch(t)
-		r := 1
+		r := int64(1)
 		if len(match) == 3 {
-			r, err = strconv.Atoi(match[2])
+			r, err = strconv.ParseInt(match[2], 10, 64)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -115,7 +116,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := appengine.NewContext(r)
-	resp, err := timeseries.GetData(c, &req)
+	resp, err := timeseries.GetData(&impl.Appengine{c}, &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

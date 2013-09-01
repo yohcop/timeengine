@@ -1,4 +1,4 @@
-package timeseries
+package points
 
 import (
 	"sort"

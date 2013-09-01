@@ -1,5 +1,11 @@
 package timeseries
 
+// Aggregates
+//
+// Aggregates combine a bunch of datapoints into a single entry
+// in the datastore or memcache.
+
+/*
 import (
 	"log"
 	"time"
@@ -8,20 +14,6 @@ import (
 )
 
 var _ = log.Println
-
-type AggFunc func([]*P) *float64
-
-func Avg(pts []*P) *float64 {
-	if len(pts) == 0 {
-		return nil
-	}
-	s := 0.0
-	for _, n := range pts {
-		s += n.V
-	}
-	res := s / float64(len(pts))
-	return &res
-}
 
 func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f AggFunc) ([]*P, error) {
 	if ts == 1 {
@@ -82,3 +74,4 @@ func genAggregate(c appengine.Context, ts TimeSlice, from, to int64, m string, f
 	sortPtsByDate(pts)
 	return pts, nil
 }
+*/
