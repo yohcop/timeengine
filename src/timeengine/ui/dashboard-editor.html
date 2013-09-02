@@ -6,7 +6,7 @@
   <input type='hidden' id='dash-name' value='{{.Name}}'></input>
   <textarea id='dash-data' class="input-block-level" rows="25"
   >{{.Graphs}}</textarea>
-  <button type="submit" class="btn btn-primary" onclick="saveDashboard()">Save</button> (You can auto-indent by saving and refreshing the page)
+  <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Save</button> (You can auto-indent by saving and refreshing the page)
 
   <h3>Example</h3>
   <p>Note: never add a trailing <code>,</code> after last dictionary or array element.</p>
@@ -40,15 +40,26 @@ function saveDashboard() {
     return;
   }
 
+  $('#save-dash').attr('disabled', 'disabled');
   $.ajax({
     url: "/api/dashboard/save/",
     data: {'dashboard': dash, 'data': JSON.stringify(data)},
   	dataType: 'json',
   	success: function(d) {
+      $('#save-dash').removeAttr('disabled');
+      $('#save-dash').addClass('btn-success');
+      setTimeout(function() {
+        $('#save-dash').removeClass('btn-success');
+      }, 1500);
     },
     error: function(d) {
       console.log(d);
       alert(d.responseText);
+      $('#save-dash').removeAttr('disabled');
+      $('#save-dash').addClass('btn-danger');
+      setTimeout(function() {
+        $('#save-dash').removeClass('btn-danger');
+      }, 1500);
     }
   });
 }

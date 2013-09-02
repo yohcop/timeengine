@@ -49,6 +49,15 @@ body{
 }
 .legend{
 }
+#loading{
+position:absolute;
+right: 4px;
+bottom: 4px;
+background-color:#c00;
+padding: 4px;
+font-weight: bold;
+color:#fff;
+}
 </style>
 <script src="http://dygraphs.com/dygraph-dev.js"></script>
 <script type="text/javascript" src="http://www.google.com/jsapi"></script>
@@ -60,47 +69,48 @@ body{
 <body>
 
 <div id="controls">
-<span id="title"></span>
-<span id="buttons">
-<span class="bt-group">
-<input type="checkbox" id="ct-update" checked=checked onclick="toggleUpdates()">Live updates</input>
-<input type="checkbox" checked=checked id="ct-sync-graphs" onclick="toggleSync()">Sync zooms</input>
-</span>
+  <span id="title"></span>
+  <span id="buttons">
+    <span class="bt-group">
+      <input type="checkbox" id="ct-update" checked=checked onclick="toggleUpdates()">Live updates</input>
+      <input type="checkbox" checked=checked id="ct-sync-graphs" onclick="toggleSync()">Sync zooms</input>
+      <input type="checkbox" checked=checked id="ct-pull-on-pan" onclick="togglePullOnPan()">Auto fetch</input>
+    </span>
 
-<span class="bt-group">
-Zoom:
-<button onclick="setLast(24*60*60)">-1d</button>
-<button onclick="setLast(60*60)">-1h</button>
-<button onclick="setLast(15*60)">-15m</button>
-<button onclick="setLast(60)">-60s</button>
-</span>
+    <span class="bt-group">
+      Zoom:
+      <button onclick="setLast(24*60*60)">-1d</button>
+      <button onclick="setLast(60*60)">-1h</button>
+      <button onclick="setLast(15*60)">-15m</button>
+      <button onclick="setLast(60)">-60s</button>
+    </span>
 
-<!--span class="bt-group">
-Load:
-<button onclick="loadMore(365*24*60*60, '43200s')">1y</button>
-<button onclick="loadMore(31*24*60*60, '3600s')">1m</button>
-<button onclick="loadMore(7*24*60*60, '600s')">1w</button>
-<button onclick="loadMore(24*60*60, '60s')">1d</button>
-<button onclick="loadMore(60*60, '15s')">1h</button>
-</span-->
+    <!--span class="bt-group">
+    Load:
+    <button onclick="loadMore(365*24*60*60, '43200s')">1y</button>
+    <button onclick="loadMore(31*24*60*60, '3600s')">1m</button>
+    <button onclick="loadMore(7*24*60*60, '600s')">1w</button>
+    <button onclick="loadMore(24*60*60, '60s')">1d</button>
+    <button onclick="loadMore(60*60, '15s')">1h</button>
+    </span-->
 
-<span class="bt-group">
-View Fetch:
-<button onclick="loadFromZoom(false)">Fetch</button>
-<!--button onclick="loadFromZoom(true)">Full</button-->
-</span>
+    <span class="bt-group">
+      View:
+      <button onclick="loadFromZoom(false)">Fetch</button>
+      <!--button onclick="loadFromZoom(true)">Full</button-->
+    </span>
 
-<span class="bt-group bt-group-end">
-<button onclick="shareView()">Share view</button>
-</span>
-</span>
+    <span class="bt-group bt-group-end">
+      <button onclick="shareView()">Share view</button>
+    </span>
+  </span>
 </div>
 
-<div id="graphs">
-</div>
+<div id="graphs"></div>
+<div id="loading">Loading...</div>
 
 <script>
-// Default options.
+// Default options. These can be specified in the URL as well.
 var opts = {
   graphite_url: '',
 
@@ -108,6 +118,7 @@ var opts = {
   dashboard: 'ycoppel1',
   test_metric: '',
 
+  pull_on_pan: true,
   sync_graphs: true,
   live_updates: true,
   initial_fetch: '-10s',
@@ -119,20 +130,26 @@ var opts = {
   from: 0,
   to: 0,
   full_res_preload: false,
+
+  // Params for dashboard config.
+  params: {},
 };
 
 // State stuff.
-var all_graphs = [];
 var first = Math.ceil(new Date().valueOf() / 1000);
 var last = Math.ceil(new Date().valueOf() / 1000);
 var min_freq = 10;
 // Dygraph -> object{g, targets, data}
 var graphs = [];
-// target -> true
+// target -> aggregate function. target is of the form
+// "target_name@aggregate_fn", e.g. "my.metric@avg"
+// This is use for fetching, so we don't fetch the same
+// metrics multiple times if they are used in different
+// graphs.
 var all_targets = {};
 var timer = null;
-var blockRedraw = false;
 var fetchTimer = null;
+var blockRedraw = false;
 
 function drawCallback(me, initial) {
   if (blockRedraw || initial || !opts.sync_graphs) return;
@@ -149,11 +166,31 @@ function drawCallback(me, initial) {
   fetchOnMoveTimer();
 }
 
+function replaceParamsInString(s) {
+  var match = null;
+  while (match = s.match(/\$\{(.+?)\}/)) {
+    s = s.replace(match[0], opts.params['$' + match[1]]);
+    console.log(s);
+  }
+  return s;
+}
+
 function mkgraph(els, targets, title) {
   var labels = ['x'];
+  var parsedTargets = [];
   for (var t in targets) {
-    labels.push(targets[t]);
-    all_targets[targets[t]] = true;
+    var target = replaceParamsInString(targets[t]);
+    parsedTargets.push(target);
+    var aggregate = 'avg';
+    var name = target;
+
+    var targetCfg = name.split('@');
+    if (targetCfg.length == 2) {
+      name = targetCfg[0];
+      aggregate = targetCfg[1];
+    }
+    labels.push(target);
+    all_targets[target] = aggregate;
   }
   var g = new Dygraph(els.graph, [], {
     labels: labels,
@@ -170,10 +207,9 @@ function mkgraph(els, targets, title) {
     //strokeBorderWidth: 2,
     //strokeBorderColor: 'black',
   });
-  all_graphs.push(g);
   graphs.push({
     g: g,
-    targets: targets,
+    targets: parsedTargets,
     data: [],
     data_by_date: {},
   });
@@ -214,10 +250,16 @@ function update(url) {
   // TODO: wrap update in another function that calls setupUpdates
   // correctly, instead of the hack of looking if url is defined.
   var outOfBand = (url != undefined);
+  if (outOfBand) {
+    // Only show the loading sign for 'out of band' (i.e. not on timer)
+    // updates, otherwise, it's annoying.
+    loading(true);
+  }
   timer = null;
   var start_update = new Date().valueOf();
   var bye = function() {
     if (outOfBand) {
+      loading(false);
       return;
     }
     var end_update = new Date().valueOf();
@@ -404,6 +446,11 @@ function toggleUpdates() {
   setupUpdates();
 }
 
+function togglePullOnPan() {
+  var c = document.getElementById('ct-pull-on-pan');
+  opts.pull_on_pan = c.checked;
+}
+
 function setupUpdates(ms) {
   if (opts.live_updates) {
     if (!timer) {
@@ -429,7 +476,9 @@ function fetchOnMoveTimer() {
   }
   fetchTimer = setTimeout(function() {
     // TODO: check what data we already have here.
-    loadFromZoom(false);
+    if (opts.pull_on_pan) {
+      loadFromZoom(false);
+    }
   }, 500);
 }
 
@@ -521,13 +570,18 @@ function parseOpts() {
       if (val == 'true') val = true;
       else if (val == 'false') val = false;
     }
-    opts[key] = val;
+    if (key[0] == '$') {
+      opts.params[key] = val;
+    } else {
+      opts[key] = val;
+    }
   }
   console.log(opts);
 
   document.getElementById('ct-update').checked = opts.live_updates;
   setupUpdates();
   document.getElementById('ct-sync-graphs').checked = opts.sync_graphs;
+  document.getElementById('ct-pull-on-pan').checked = opts.pull_on_pan;
 }
 
 function setupTestDashboard() {
@@ -621,6 +675,15 @@ function shareUrl(full_res) {
   }
   url += '&live_updates=false';
   return url;
+}
+
+function loading(isLoading) {
+  console.log(isLoading);
+  if (isLoading) {
+    $('#loading').show();
+  } else {
+    $('#loading').hide();
+  }
 }
 
 function main() {
