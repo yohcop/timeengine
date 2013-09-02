@@ -33,12 +33,13 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := make([]*dashboard.Graph, 0)
-	err = json.Unmarshal(dash.G, &data)
+  cfg, err := dash.Cfg()
 	if err != nil {
-		http.Error(w, "Dashboard not found", http.StatusInternalServerError)
+		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
 		return
 	}
+
+	data := cfg.Graphs
 
 	w.Write([]byte(`{
    "state":{

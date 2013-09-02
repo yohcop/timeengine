@@ -38,7 +38,8 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 type DashboardResp struct {
-	Name string
+	Name        string
+	Description string
 }
 
 type DashboardListResp struct {
@@ -60,10 +61,14 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := &DashboardListResp{}
-	for i := range dashs {
-		resp.Dashboards = append(resp.Dashboards, &DashboardResp{
-			Name: keys[i].StringID(),
-		})
+	for i, dash := range dashs {
+    dashresp := &DashboardResp{
+			Name:        keys[i].StringID(),
+		}
+    if cfg, err := dash.Cfg(); err == nil {
+			dashresp.Description = cfg.Description
+    }
+		resp.Dashboards = append(resp.Dashboards, dashresp)
 	}
 	s, _ := json.Marshal(resp)
 	w.Write(s)
@@ -75,19 +80,14 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if the name is valid, and normalize the name.
 	d, err := ValidDashboard(r.FormValue("dashboard"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	data := make([]*Graph, 0)
-	err = json.Unmarshal([]byte(r.FormValue("data")), &data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	// Check if the dashboard exists.
 	c := appengine.NewContext(r)
 	dashboard := GetDashboard(c, d)
 	if dashboard == nil {
@@ -95,6 +95,23 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if the user can edit this dashboard.
+	if authorized, err := dashboard.IsAcled(user.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if !authorized {
+		http.Error(w, "Not authorized to edit this dashboard.",
+			http.StatusUnauthorized)
+		return
+	}
+
+	// Prepare the new config: parse it from JSON.
+	data := DashConfig{}
+	err = json.Unmarshal([]byte(r.FormValue("data")), &data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	dashboard.G, _ = json.MarshalIndent(data, "", "\t")
 
 	key := DashboardKey(c, d)

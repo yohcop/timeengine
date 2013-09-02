@@ -11,16 +11,19 @@
   <h3>Example</h3>
   <p>Note: never add a trailing <code>,</code> after last dictionary or array element.</p>
 <pre>
-[
-  {
-    "name": "first graph",
-    "targets": [ "one.metric", "another.metric" ]
-  },
-  {
-    "name": "second graph",
-    "targets": [ "just.one.metric" ]
-  }
-]
+{
+  "graphs": [
+    {
+      "name": "first graph",
+      "targets": [ "my.metric.0", "my.metric.1" ]
+    },
+    {
+      "name": "second graph",
+      "targets": [ "my.metric.2" ]
+    }
+  ],
+  "acl": []
+}
 </pre>
 </div>
 
