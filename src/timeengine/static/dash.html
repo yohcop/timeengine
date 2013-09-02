@@ -75,19 +75,19 @@ Zoom:
 <button onclick="setLast(60)">-60s</button>
 </span>
 
-<span class="bt-group">
+<!--span class="bt-group">
 Load:
 <button onclick="loadMore(365*24*60*60, '43200s')">1y</button>
 <button onclick="loadMore(31*24*60*60, '3600s')">1m</button>
 <button onclick="loadMore(7*24*60*60, '600s')">1w</button>
 <button onclick="loadMore(24*60*60, '60s')">1d</button>
 <button onclick="loadMore(60*60, '15s')">1h</button>
-</span>
+</span-->
 
 <span class="bt-group">
 View Fetch:
-<button onclick="loadFromZoom(false)">Avg</button>
-<button onclick="loadFromZoom(true)">Full</button>
+<button onclick="loadFromZoom(false)">Fetch</button>
+<!--button onclick="loadFromZoom(true)">Full</button-->
 </span>
 
 <span class="bt-group bt-group-end">
@@ -132,6 +132,7 @@ var graphs = [];
 var all_targets = {};
 var timer = null;
 var blockRedraw = false;
+var fetchTimer = null;
 
 function drawCallback(me, initial) {
   if (blockRedraw || initial || !opts.sync_graphs) return;
@@ -145,6 +146,7 @@ function drawCallback(me, initial) {
     });
   }
   blockRedraw = false;
+  fetchOnMoveTimer();
 }
 
 function mkgraph(els, targets, title) {
@@ -420,6 +422,17 @@ function setupUpdates(ms) {
   }
 }
 
+
+function fetchOnMoveTimer() {
+  if (fetchTimer) {
+    clearTimeout(fetchTimer);
+  }
+  fetchTimer = setTimeout(function() {
+    // TODO: check what data we already have here.
+    loadFromZoom(false);
+  }, 500);
+}
+
 function toggleSync() {
   var c = document.getElementById('ct-sync-graphs');
   opts.sync_graphs = c.checked;
@@ -444,6 +457,7 @@ function setDateWindow(left, right) {
     g.updateOptions({'dateWindow': [left, right]});
   }
   blockRedraw = false;
+  loadFromZoom(false);
 }
 
 function loadMore(secs, res) {
