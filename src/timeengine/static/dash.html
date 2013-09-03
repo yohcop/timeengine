@@ -45,21 +45,27 @@ body{
   text-align:right;
   border:1px solid #ccc;
   margin: 10px;
-  padding:10px;
+  padding:10px 10px 28px 10px;
+  position:relative;
+
 }
 .legend{
+  position:absolute;
+  bottom:8px;
+  z-index:1000;
+  background-color:#fff;
 }
 #loading{
-position:fixed;
-right: 4px;
-bottom: 4px;
-background-color:#c00;
-padding: 4px;
-font-weight: bold;
-color:#fff;
+  position:fixed;
+  right: 4px;
+  bottom: 4px;
+  background-color:#c00;
+  padding: 4px;
+  font-weight: bold;
+  color:#fff;
 }
 </style>
-<script src="http://dygraphs.com/dygraph-dev.js"></script>
+<script src="/static3/dygraph/dygraph-combined.js"></script>
 <script type="text/javascript" src="http://www.google.com/jsapi"></script>
 <script type="text/javascript">
   //google.load('visualization', '1', {packages: ['gauge']});
@@ -565,6 +571,7 @@ function createChartEl() {
   container.className = 'graph-container';
   graph_el.className = 'graph';
   legend.className = 'legend';
+  legend.style.width=""+opts.graph_width+"px";
   container.appendChild(graph_el);
   container.appendChild(legend);
   document.getElementById('graphs').appendChild(container);
