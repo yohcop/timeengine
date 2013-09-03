@@ -30,7 +30,7 @@ func BuildFrames(c ae.Context, metric string, span *Span) ([]*frame, error) {
 		for _, finer := range finerFrames {
 			if finer.GetTs() >= at && finer.GetTs() < at+step {
 				relevantFrames = append(relevantFrames, finer)
-      }
+			}
 		}
 		// Now we have all the relevant higher-res frames for the
 		// frame we are trying to build.
@@ -43,4 +43,3 @@ func BuildFrames(c ae.Context, metric string, span *Span) ([]*frame, error) {
 	err = c.PutMulti("F", newKeys, newFrames)
 	return newFrames, err
 }
-

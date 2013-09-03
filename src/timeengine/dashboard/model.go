@@ -21,9 +21,9 @@ type DashConfig struct {
 }
 
 type Graph struct {
-	Name              string
-	Targets           []string
-	Resolution        int64
+	Name       string
+	Targets    []string
+	Resolution int64
 }
 
 func (d *Dashboard) Cfg() (*DashConfig, error) {

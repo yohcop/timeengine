@@ -33,6 +33,6 @@ func init() {
 	http.HandleFunc("/dashboard/load/", compat.Dashboard)
 	http.HandleFunc("/render/", compat.Render)
 
-  // Task queues handlers
-  http.HandleFunc("/tasks/aggregateminute", timeseries.Aggregate60sTask)
+	// Task queues handlers
+	http.HandleFunc("/tasks/aggregateminute", timeseries.Aggregate60sTask)
 }

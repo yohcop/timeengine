@@ -3,13 +3,13 @@ package points
 import (
 	"log"
 
-  "timeengine/ae"
+	"timeengine/ae"
 )
 
 var _ = log.Println
 
 func GetPoints(c ae.Context, metric string, span *Span) ([]StatsDataPoint, error) {
-	if span.fs.Secs() == 0 || span.to.Ts() - span.from.Ts() <= 120 {
+	if span.fs.Secs() == 0 || span.to.Ts()-span.from.Ts() <= 120 {
 		return getRawPoints(c, metric, span.from.Ts(), span.to.Ts())
 	}
 	return getFromFrames(c, metric, span)
@@ -17,16 +17,16 @@ func GetPoints(c ae.Context, metric string, span *Span) ([]StatsDataPoint, error
 
 func getRawPoints(c ae.Context, metric string, from, to int64) ([]StatsDataPoint, error) {
 	pts := make([]*P, 0)
-  keys, err := c.DsGetBetweenKeys("P",
-      keyAt(metric, from), keyAt(metric, to), -1, &pts)
+	keys, err := c.DsGetBetweenKeys("P",
+		keyAt(metric, from), keyAt(metric, to), -1, &pts)
 	if err != nil {
-    log.Println("Error there", keyAt(metric, from), err.Error())
+		log.Println("Error there", keyAt(metric, from), err.Error())
 		return nil, err
 	}
 	stats := make([]StatsDataPoint, len(pts))
 	for i, p := range pts {
 		decodePointStrKey(keys[i], p)
-    stats[i] = p
+		stats[i] = p
 	}
 	return stats, nil
 }
@@ -51,8 +51,7 @@ func getFromFrames(c ae.Context, metric string, span *Span) (
 		p.metric = metric
 		p.fs = fsize
 		p.kf = kf
-    stats[i] = p
+		stats[i] = p
 	}
 	return stats, nil
 }
-

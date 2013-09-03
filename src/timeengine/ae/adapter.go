@@ -9,6 +9,6 @@ type Context interface {
 	DsGetBetweenKeys(
 		kind, from, to string, limit int, els interface{}) (
 		keys []string, err error)
-  DeleteMulti(kind string, keys[]string) error
+	DeleteMulti(kind string, keys []string) error
 	AddTasks(queue, parh string, tasks []url.Values) error
 }

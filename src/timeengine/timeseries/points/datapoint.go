@@ -36,15 +36,15 @@ type P struct {
 }
 
 func NewP(value float64, timestamp int64, metric string) *P {
-  return &P{V: value, t: timestamp, m: metric}
+	return &P{V: value, t: timestamp, m: metric}
 }
 
 func (p *P) Timestamp() int64 {
-  return p.t
+	return p.t
 }
 
 func (p *P) Key() string {
-  return keyAt(p.m, p.t)
+	return keyAt(p.m, p.t)
 }
 
 func keyAt(m string, t int64) string {

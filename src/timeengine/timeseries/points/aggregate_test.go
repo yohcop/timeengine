@@ -67,8 +67,8 @@ func TestBuildFramesFirstLevel(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-  p1 := NewP(1.1, 60, "foo.bar")
-  p2 := NewP(1.2, 63, "foo.bar")
+	p1 := NewP(1.1, 60, "foo.bar")
+	p2 := NewP(1.2, 63, "foo.bar")
 
 	// The limits between which the search is going to happen.
 	l1 := keyAt("foo.bar", 60)

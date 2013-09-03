@@ -1,15 +1,15 @@
 package impl
 
 import (
-    "net/url"
+	"net/url"
 
-    "appengine"
-    "appengine/datastore"
-    "appengine/taskqueue"
+	"appengine"
+	"appengine/datastore"
+	"appengine/taskqueue"
 )
 
 type Appengine struct {
-  C appengine.Context
+	C appengine.Context
 }
 
 func (ae *Appengine) DsGetBetweenKeys(kind, from, to string, limit int, els interface{}) (keys []string, err error) {
@@ -20,10 +20,10 @@ func (ae *Appengine) DsGetBetweenKeys(kind, from, to string, limit int, els inte
 	q = q.Limit(limit)
 
 	ks, err := q.GetAll(ae.C, els)
-  for _, k := range ks {
-    keys = append(keys, k.StringID())
-  }
-  return keys, err
+	for _, k := range ks {
+		keys = append(keys, k.StringID())
+	}
+	return keys, err
 }
 
 func (ae *Appengine) PutMulti(kind string, keys []string, els interface{}) error {
@@ -32,7 +32,7 @@ func (ae *Appengine) PutMulti(kind string, keys []string, els interface{}) error
 		ks[i] = datastore.NewKey(ae.C, kind, p, 0, nil)
 	}
 	_, err := datastore.PutMulti(ae.C, ks, els)
-  return err
+	return err
 }
 
 func (ae *Appengine) DeleteMulti(kind string, keys []string) error {
@@ -44,10 +44,10 @@ func (ae *Appengine) DeleteMulti(kind string, keys []string) error {
 }
 
 func (ae *Appengine) AddTasks(queue, path string, tasks []url.Values) error {
-  aeTasks := make([]*taskqueue.Task, len(tasks))
-  for i, values := range tasks {
-    aeTasks[i] = taskqueue.NewPOSTTask(path, values)
-  }
-  _, err := taskqueue.AddMulti(ae.C, aeTasks, queue)
-  return err
+	aeTasks := make([]*taskqueue.Task, len(tasks))
+	for i, values := range tasks {
+		aeTasks[i] = taskqueue.NewPOSTTask(path, values)
+	}
+	_, err := taskqueue.AddMulti(ae.C, aeTasks, queue)
+	return err
 }

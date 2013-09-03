@@ -1,7 +1,7 @@
 package timeseries
 
 import (
-  "log"
+	"log"
 
 	"timeengine/ae"
 	"timeengine/timeseries/points"
@@ -12,19 +12,19 @@ var _ = log.Println
 func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 	resp := &GetResp{}
 	for _, serie := range req.Serie {
-    log.Println(serie.S)
+		log.Println(serie.S)
 
-    summaryFn := points.GetSummarySelector(serie.S)
+		summaryFn := points.GetSummarySelector(serie.S)
 		res := points.SelectFrameSize(serie.R)
 		pts, err := points.GetPoints(c, serie.M,
-        points.NewSpan(res, serie.T, serie.To))
+			points.NewSpan(res, serie.T, serie.To))
 		if err != nil {
 			return nil, err
 		}
-		maxPoints := int(serie.To-serie.T)
-    if res > 1 {
-      maxPoints /= int(res)
-    }
+		maxPoints := int(serie.To - serie.T)
+		if res > 1 {
+			maxPoints /= int(res)
+		}
 		s := &SerieData{
 			Target:     serie.M + "@" + serie.S,
 			Datapoints: make([]*DataPoint, 0, maxPoints),

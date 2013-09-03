@@ -62,12 +62,12 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := &DashboardListResp{}
 	for i, dash := range dashs {
-    dashresp := &DashboardResp{
-			Name:        keys[i].StringID(),
+		dashresp := &DashboardResp{
+			Name: keys[i].StringID(),
 		}
-    if cfg, err := dash.Cfg(); err == nil {
+		if cfg, err := dash.Cfg(); err == nil {
 			dashresp.Description = cfg.Description
-    }
+		}
 		resp.Dashboards = append(resp.Dashboards, dashresp)
 	}
 	s, _ := json.Marshal(resp)
