@@ -50,7 +50,7 @@ body{
 .legend{
 }
 #loading{
-position:absolute;
+position:fixed;
 right: 4px;
 bottom: 4px;
 background-color:#c00;
@@ -669,27 +669,30 @@ function finishSetup() {
 }
 
 function shareView() {
-  var url = shareUrl(true);
+  var url = shareUrl();
   document.location.hash = url;
   alert('Copy the URL. By default, this will load the timestamp ' +
       'at full resolution. If your time range is too wide, you ' +
       'may consider editing the URL before sharing it.');
 }
 
-function shareUrl(full_res) {
+function shareUrl() {
   var g = graphs[0].g;
   var range = g.xAxisRange();
   console.log(range);
   var from = new Date(range[0]).toISOString();
   var to = new Date(range[1]).toISOString();
   console.log(from, to);
-  var url = '#' + opts.dashboard +
-    '&namespace=' + opts.namespace +
-    '&from=' + from + '&to=' + to;
-  if (full_res) {
-    url += '&full_res_preload=true';
+  var url = '#' + opts.dashboard;
+  for (var k in opts) {
+    if (k == 'dashboard' || k == 'params') {
+      continue;
+    }
+    url += '&' + k + '=' + opts[k];
   }
-  url += '&live_updates=false';
+  for (var p in opts.params) {
+    url += '&' + p + '=' + opts.params[p];
+  }
   return url;
 }
 
