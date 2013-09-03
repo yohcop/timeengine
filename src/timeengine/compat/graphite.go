@@ -4,68 +4,15 @@ import (
 	"encoding/json"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"timeengine/ae/impl"
-	"timeengine/dashboard"
 	"timeengine/timeseries"
 	"timeengine/users"
 
 	"appengine"
 	"net/http"
 )
-
-func Dashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
-		return
-	}
-
-	re := regexp.MustCompile("/dashboard/load/(.*)")
-	match := re.FindStringSubmatch(r.URL.Path)
-	name := match[1]
-
-	c := appengine.NewContext(r)
-	dash := dashboard.GetDashFromDatastore(c, name)
-	if dash == nil {
-		http.Error(w, "Dashboard not found", http.StatusBadRequest)
-		return
-	}
-
-	cfg, err := dash.Cfg()
-	if err != nil {
-		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
-		return
-	}
-
-	data := cfg.Graphs
-
-	w.Write([]byte(`{
-   "state":{
-      "name":"` + name + `",
-      "graphs":[
-         `))
-	for i, g := range data {
-		extraCfg, _ := json.Marshal(g.DygraphOpts)
-		w.Write([]byte(`
-         [
-            "` + g.Name + `",
-            {
-               "target":["` + strings.Join(g.Targets, `","`) + `"]
-            },
-            ` + string(extraCfg) + `
-         ]`))
-		if i < len(data)-1 {
-			w.Write([]byte(","))
-		}
-	}
-	w.Write([]byte(`
-      ]
-    }
-  }
-  `))
-}
 
 func Render(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)

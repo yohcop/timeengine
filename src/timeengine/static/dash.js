@@ -67,46 +67,36 @@ function replaceParamsInTargets(targets) {
   }
 }
 
-function makeBasicExpressions(targets) {
-  var expressions = [];
-  for (var t in targets) {
-    var target = targets[t];
-    expressions.push({
-      label: target,
-      expr: 'v' + t,
-    });
-  }
-  return expressions;
-}
-
 function mkgraph(els, targets, expressions, title, dygraphOpts) {
   replaceParamsInTargets(targets);
-  if (!expressions) {
-    expressions = makeBasicExpressions(targets);
-  }
 
-  console.log(expressions);
-  var parsedTargets = [];
+  var parsedTargets = {};
+  var labels = ['x'];
   for (var t in targets) {
     var target = targets[t];
     var aggregate = 'avg';
     var name = target;
+    var encodedTarget = target;
 
     var targetCfg = name.split('@');
     if (targetCfg.length == 2) {
       name = targetCfg[0];
       aggregate = targetCfg[1];
     } else {
-      target = target + '@' + aggregate;
+      encodedTarget = target + '@' + aggregate;
     }
-    parsedTargets.push(target);
-    all_targets[target] = {name: name, fn: aggregate};
+    labels.push(t);
+    parsedTargets[t] = encodedTarget;
+    all_targets[encodedTarget] = {name: name, fn: aggregate};
   }
-  var labels = ['x'];
-  var parsedExpressions = [];
-  for (var exp_i in expressions) {
-    labels.push(expressions[exp_i].label);
-    parsedExpressions.push(Parser.parse(expressions[exp_i].expr));
+  var parsedExpressions = null;
+  if (expressions) {
+    parsedExpressions = [];
+    labels = ['x'];
+    for (var exp_i in expressions) {
+      labels.push(exp_i);
+      parsedExpressions.push(Parser.parse(expressions[exp_i]));
+    }
   }
   dygraphCfg = {
     labels: labels,
@@ -246,7 +236,10 @@ function executeExpr(vars, expr) {
   return expr.evaluate(vars);
 }
 
-function processData(rawData, expressions) {
+function processData(targets, rawData, expressions) {
+  if (!expressions) {
+    return rawData;
+  }
   // rawData is an array, where each element is:
   // [date, value_for_target0, ..., value_for_targetN]
   // Expressions reffer to values via v0, v1, ... vN.
@@ -254,8 +247,9 @@ function processData(rawData, expressions) {
   for (var row_i in rawData) {
     var row = rawData[row_i];
     var vars = {};
-    for (var i = 1; i < row.length; ++i) {
-      vars['v'+(i-1)] = row[i];
+    var i = 1;
+    for (var target in targets) {
+      vars[target] = row[i++];
     }
 
     var newRow = [row[0]];  // Just the date.
@@ -309,7 +303,9 @@ function rebuildGraphs(new_data, append_from) {
     }
 
     // Update the graph.
-    var opts = {'file': processData(obj.data, obj.expressions)};
+    var opts = {
+      file: processData(obj.targets, obj.data, obj.expressions),
+    };
     var win = g.xAxisRange();
     var win_to_last = win[1] - (append_from * 1000);
     var following = g.isZoomed('x') && win_to_last > -5000;//< 1000 && win_to_last > -1000;

@@ -31,7 +31,6 @@ func init() {
 
 	// Backward compatible with graphite:
 	// get a dashboard, and a tiny subset of the json renderer.
-	http.HandleFunc("/dashboard/load/", compat.Dashboard)
 	http.HandleFunc("/render/", compat.Render)
 
 	// Task queues handlers

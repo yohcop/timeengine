@@ -20,15 +20,10 @@ type DashConfig struct {
 	ACL         []string `json:"acl,omitempty"`
 }
 
-type Expression struct {
-	Label string `json:"label"`
-	Expr  string `json:"expr"`
-}
-
 type Graph struct {
 	Name        string                 `json:"name"`
-	Targets     []string               `json:"targets"`
-	Expressions []Expression           `json:"expressions,omitempty"`
+	Targets     map[string]string      `json:"targets"`
+	Expressions map[string]string      `json:"expressions,omitempty"`
 	Resolution  int64                  `json:"resolution,omitempty"`
 	DygraphOpts map[string]interface{} `json:"dygraphOpts,omitempty"`
 }
