@@ -19,16 +19,16 @@ func encodeSerieDef(def *SerieDef) string {
 func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 	resp := &GetResp{}
 	// TODO: make each call in a separate go routine.
-	defs := make(map[string]*SerieDef)
-	data := make(map[string][]points.StatsDataPoint)
 	// Some series may be duplicated since they may have different
 	// summary functions (serie.S). So find the unique series.
+	defs := make(map[string]*SerieDef)
 	for _, serie := range req.Serie {
 		k := encodeSerieDef(serie)
 		defs[k] = serie
-		data[k] = nil
 	}
+
 	// Now request the data for each unique definition.
+	data := make(map[string][]points.StatsDataPoint)
 	dataMutex := sync.Mutex{}
 	// Go routines put a nil in the done channel if everything went ok
 	// otherwise they put an error.
@@ -48,7 +48,8 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 			done <- nil
 		}(key, serie)
 	}
-	// Wait until all the go routines are done.
+
+	// Wait until all the go routines are done, and check for errors.
 	for _ = range defs {
 		err := <-done
 		if err != nil {
@@ -57,7 +58,7 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 	}
 
 	// Compute the outpug for each requested Serie, using the
-	// data retrieved.
+	// data retrieved by the go routines.
 	for _, serie := range req.Serie {
 		k := encodeSerieDef(serie)
 		res := points.SelectFrameSize(serie.R)
