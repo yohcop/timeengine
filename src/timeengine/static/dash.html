@@ -180,7 +180,6 @@ function mkgraph(els, targets, title) {
   var parsedTargets = [];
   for (var t in targets) {
     var target = replaceParamsInString(targets[t]);
-    parsedTargets.push(target);
     var aggregate = 'avg';
     var name = target;
 
@@ -188,9 +187,12 @@ function mkgraph(els, targets, title) {
     if (targetCfg.length == 2) {
       name = targetCfg[0];
       aggregate = targetCfg[1];
+    } else {
+      target = target + '@' + aggregate;
     }
+    parsedTargets.push(target);
     labels.push(target);
-    all_targets[target] = aggregate;
+    all_targets[target] = {name: name, fn: aggregate};
   }
   var g = new Dygraph(els.graph, [], {
     labels: labels,
@@ -215,6 +217,9 @@ function mkgraph(els, targets, title) {
   });
 }
 
+function extractNameAndAggregateFn(metric) {
+}
+
 function pollUrl(from, to, summarize) {
   if (Object.keys(all_targets).length == 0) {
     return null;
@@ -231,14 +236,25 @@ function pollUrl(from, to, summarize) {
   }
 
   var targets_q = "";
+  // We save here the targets we already requested. There may
+  // be some duplicates, since all_targets key includes the aggregate
+  // function, but when we request full data, we don't use this.
+  var done_targets = {};
   for (var k in all_targets) {
-    k = addNamespaceToTarget(k);
+    name = all_targets[k].name;
+    name = addNamespaceToTarget(name);
     if (!summarize) {
-      targets_q += "&target=" + k;
+      if (!done_targets[name]) {
+        targets_q += "&target=" + name;
+        done_targets[name] = true;
+      }
     } else {
+      fn = all_targets[k].fn;
       targets_q += "&target=" +
         encodeURIComponent(
-            "summarize(" + k + ", \"" + summarize + "\", \"avg\")");
+            "summarize(" + name + ", \"" +
+                       summarize + "\", \"" +
+                       fn + "\")");
     }
   }
   return opts.graphite_url + '/render/?' +

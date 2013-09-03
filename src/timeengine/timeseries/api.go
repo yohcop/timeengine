@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-  "timeengine/ae/impl"
+	"timeengine/ae/impl"
 	"timeengine/namespace"
+	"timeengine/timeseries/points"
 	"timeengine/users"
-  "timeengine/timeseries/points"
 
 	"appengine"
 )
@@ -76,6 +76,7 @@ type SerieDef struct {
 	T  int64
 	To int64
 	M  string
+	S  string
 }
 
 type GetReq struct {

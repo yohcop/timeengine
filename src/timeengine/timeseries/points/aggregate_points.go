@@ -52,20 +52,6 @@ type frame struct {
 	kf     KeyFrame  // timestamp
 }
 
-type StatSelector func(StatsDataPoint) float64
-
-func (a *frame) Points(fn StatSelector) []*P {
-	points := make([]*P, 0, len(a.Children))
-	for _, p := range a.Children {
-		points = append(points, &P{
-			V: fn(&p),
-			m: a.metric,
-			t: p.Ts,
-		})
-	}
-	return points
-}
-
 func aggregateKeyName(metric string, r FrameSize, kf KeyFrame) string {
 	return fmt.Sprintf("%s@%d@%010d", metric, r, kf)
 }

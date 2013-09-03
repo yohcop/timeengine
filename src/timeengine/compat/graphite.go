@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-  "timeengine/ae/impl"
+	"timeengine/ae/impl"
 	"timeengine/dashboard"
 	"timeengine/timeseries"
 	"timeengine/users"
@@ -33,7 +33,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  cfg, err := dash.Cfg()
+	cfg, err := dash.Cfg()
 	if err != nil {
 		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
 		return
@@ -95,23 +95,29 @@ func Render(w http.ResponseWriter, r *http.Request) {
 	// We only understand time spans in seconds. (second arg. to summarize)
 	// example: summarize(foo.bar, "15s", "avg")
 	re := regexp.MustCompile(
-		"summarize\\(\\W*([\\w\\*.-]*)\\W*,\\W*\"([\\d]+)s\"\\W*,.*\\)")
+		"summarize\\(" +
+			"\\W*([\\w\\*.-]+)\\W*," + // Metric name
+			"\\W*\"(\\d+)s\"\\W*," + // Summary size (e.g. "60s")
+			"\\W*\"(\\w+)\"\\W*\\)") // Summary function name (e.g. "avg")
 	for _, t := range targets {
 		match := re.FindStringSubmatch(t)
 		r := int64(1)
-		if len(match) == 3 {
+		summary := "avg"
+		if len(match) == 4 {
 			r, err = strconv.ParseInt(match[2], 10, 64)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			t = match[1]
+			summary = match[3]
 		}
 		s := &timeseries.SerieDef{
 			R:  r,
 			T:  from,
 			To: until,
 			M:  t,
+			S:  summary,
 		}
 		req.Serie = append(req.Serie, s)
 	}
