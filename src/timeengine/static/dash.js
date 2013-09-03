@@ -7,7 +7,7 @@ var opts = {
   dashboard: 'ycoppel1',
   test_metric: '',
 
-  pull_on_pan: true,
+  auto_fetch: true,
   sync_graphs: true,
   live_updates: true,
   initial_fetch: '-10s',
@@ -394,7 +394,7 @@ function toggleUpdates() {
 
 function togglePullOnPan() {
   var c = document.getElementById('ct-pull-on-pan');
-  opts.pull_on_pan = c.checked;
+  opts.auto_fetch = c.checked;
 }
 
 function setupUpdates(ms) {
@@ -422,7 +422,7 @@ function fetchOnMoveTimer() {
   }
   fetchTimer = setTimeout(function() {
     // TODO: check what data we already have here.
-    if (opts.pull_on_pan) {
+    if (opts.auto_fetch) {
       loadFromZoom(false);
     }
   }, 1000);
@@ -452,7 +452,6 @@ function setDateWindow(left, right) {
     g.updateOptions({'dateWindow': [left, right]});
   }
   blockRedraw = false;
-  loadFromZoom(false);
 }
 
 function loadMore(secs, res) {
@@ -528,7 +527,7 @@ function parseOpts() {
   document.getElementById('ct-update').checked = opts.live_updates;
   setupUpdates();
   document.getElementById('ct-sync-graphs').checked = opts.sync_graphs;
-  document.getElementById('ct-pull-on-pan').checked = opts.pull_on_pan;
+  document.getElementById('ct-pull-on-pan').checked = opts.auto_fetch;
 }
 
 function setupTestDashboard() {
