@@ -25,11 +25,7 @@ func DashboardKey(c appengine.Context, name string) *datastore.Key {
 	return datastore.NewKey(c, "Dash", name, 0, nil)
 }
 
-func GetDashboard(c appengine.Context, name string) *Dashboard {
-	return getDashFromDatastore(c, name)
-}
-
-func getDashFromDatastore(c appengine.Context, name string) *Dashboard {
+func GetDashFromDatastore(c appengine.Context, name string) *Dashboard {
 	ts := &Dashboard{}
 	if err := datastore.Get(c, DashboardKey(c, name), ts); err != nil {
 		return nil

@@ -24,7 +24,7 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 
 	c := appengine.NewContext(r)
 	// Check if the dashboard already exists.
-	if GetDashboard(c, d) != nil {
+	if GetDashFromDatastore(c, d) != nil {
 		http.Error(w, "Dashboard exists", http.StatusBadRequest)
 		return
 	}
@@ -36,6 +36,8 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// Dashboard list =============================================
 
 type DashboardResp struct {
 	Name        string
@@ -74,6 +76,41 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 	w.Write(s)
 }
 
+// GetDashboard ==================================================
+
+func GetDashboard(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
+	if user == nil || err != nil {
+		return
+	}
+
+	d, err := ValidDashboard(r.FormValue("dashboard"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	c := appengine.NewContext(r)
+	// Check if the dashboard already exists.
+	dashboard := GetDashFromDatastore(c, d)
+  if dashboard == nil {
+		http.Error(w, "Dashboard doesn't exists", http.StatusBadRequest)
+		return
+	}
+
+	cfg, err := dashboard.Cfg()
+	if err != nil {
+		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
+		return
+	}
+
+  extraCfg, _ := json.MarshalIndent(cfg, "", "\t")
+	w.Write([]byte(extraCfg))
+}
+
+
+// Save dashboard ================================================
+
 func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
@@ -89,7 +126,7 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the dashboard exists.
 	c := appengine.NewContext(r)
-	dashboard := GetDashboard(c, d)
+	dashboard := GetDashFromDatastore(c, d)
 	if dashboard == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return

@@ -15,16 +15,22 @@ type Dashboard struct {
 }
 
 type DashConfig struct {
-	Graphs      []Graph
-	Description string
-	ACL         []string
+	Description string   `json:"description"`
+	Graphs      []Graph  `json:"graphs"`
+	ACL         []string `json:"acl,omitempty"`
+}
+
+type Expression struct {
+	Label string `json:"label"`
+	Expr  string `json:"expr"`
 }
 
 type Graph struct {
-	Name        string
-	Targets     []string
-	Resolution  int64
-	DygraphOpts map[string]interface{}
+	Name        string                 `json:"name"`
+	Targets     []string               `json:"targets"`
+	Expressions []Expression           `json:"expressions,omitempty"`
+	Resolution  int64                  `json:"resolution,omitempty"`
+	DygraphOpts map[string]interface{} `json:"dygraphOpts,omitempty"`
 }
 
 func (d *Dashboard) Cfg() (*DashConfig, error) {

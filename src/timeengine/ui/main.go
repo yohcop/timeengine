@@ -62,7 +62,7 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 
 	c := appengine.NewContext(r)
 	// Check if the dashboard already exists.
-	dash := dashboard.GetDashboard(c, d)
+	dash := dashboard.GetDashFromDatastore(c, d)
 	if dash == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return

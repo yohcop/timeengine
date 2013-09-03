@@ -27,7 +27,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	name := match[1]
 
 	c := appengine.NewContext(r)
-	dash := dashboard.GetDashboard(c, name)
+	dash := dashboard.GetDashFromDatastore(c, name)
 	if dash == nil {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
