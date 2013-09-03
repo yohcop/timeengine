@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -67,6 +68,16 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
 	}
+	jsonConfig := string(dash.G)
+	// Try go get a better formatted version. This may fail if the
+	// data is bad. In that case, we still want to show the bad data
+	// to the user, so he can fix it and save it. Since it won't save
+	// if the format is bad, the user has to fix it.
+	if cfg, err := dash.Cfg(); err == nil {
+		if jscfg, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+			jsonConfig = string(jscfg)
+		}
+	}
 
 	rootTmpl.ExecuteTemplate(w, "dashboard-editor", &dashboardTmplData{
 		Tpl: rootTmplData{
@@ -74,7 +85,7 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 			Login: users.LogoutURL(appengine.NewContext(r)),
 		},
 		Name:   d,
-		Graphs: string(dash.G),
+		Graphs: jsonConfig,
 	})
 }
 

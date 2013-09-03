@@ -4,9 +4,13 @@
 <div class="container">
   <h2>Dashboard edit</h2>
   <input type='hidden' id='dash-name' value='{{.Name}}'></input>
-  <textarea id='dash-data' class="input-block-level" rows="25"
+  <textarea id='dash-data' class="editor" class="input-block-level" rows="25"
   >{{.Graphs}}</textarea>
   <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Save</button> (You can auto-indent by saving and refreshing the page)
+
+  <p>
+<pre id="result"></pre>
+</p>
 
   <h3>Example</h3>
   <p>Note: never add a trailing <code>,</code> after last dictionary or array element.</p>
@@ -27,16 +31,27 @@
 </pre>
 </div>
 
+<script src="/static3/jsonlint/jsonlint.js"></script>
 <script>
+function checkJson(json) {
+  try {
+    var parsed = jsonlint.parse(json);
+    document.getElementById("result").innerHTML = '';
+    return parsed;
+  } catch(e) {
+    document.getElementById("result").innerHTML = e;
+    document.getElementById("result").className = "fail";
+    return null;
+  }
+}
+
 function saveDashboard() {
   var dash = document.getElementById('dash-name').value;
   var d = document.getElementById('dash-data').value;
   console.log(d);
 
-  try {
-    var data = JSON.parse(d);
-  } catch (e) {
-    alert(e);
+  var data = checkJson(d);
+  if (!data) {
     return;
   }
 

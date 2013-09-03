@@ -93,7 +93,7 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	// Check if the dashboard already exists.
 	dashboard := GetDashFromDatastore(c, d)
-  if dashboard == nil {
+	if dashboard == nil {
 		http.Error(w, "Dashboard doesn't exists", http.StatusBadRequest)
 		return
 	}
@@ -104,10 +104,9 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  extraCfg, _ := json.MarshalIndent(cfg, "", "\t")
+	extraCfg, _ := json.MarshalIndent(cfg, "", "  ")
 	w.Write([]byte(extraCfg))
 }
-
 
 // Save dashboard ================================================
 
@@ -149,7 +148,7 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	dashboard.G, _ = json.MarshalIndent(data, "", "\t")
+	dashboard.G, _ = json.Marshal(data)
 
 	key := DashboardKey(c, d)
 	if _, err := datastore.Put(c, key, dashboard); err != nil {
