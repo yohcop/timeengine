@@ -175,7 +175,7 @@ function replaceParamsInString(s) {
   return s;
 }
 
-function mkgraph(els, targets, title) {
+function mkgraph(els, targets, title, dygraphOpts) {
   var labels = ['x'];
   var parsedTargets = [];
   for (var t in targets) {
@@ -194,7 +194,7 @@ function mkgraph(els, targets, title) {
     labels.push(target);
     all_targets[target] = {name: name, fn: aggregate};
   }
-  var g = new Dygraph(els.graph, [], {
+  dygraphCfg = {
     labels: labels,
     animatedZooms: true,
     panEdgeFraction: 0,
@@ -204,11 +204,9 @@ function mkgraph(els, targets, title) {
     title: title,
     width: opts.graph_width,
     height: opts.graph_height,
-    //showRangeSelector: true,
-    //rangeSelectorHeight: 30,
-    //strokeBorderWidth: 2,
-    //strokeBorderColor: 'black',
-  });
+  };
+  $.extend(dygraphCfg, dygraphOpts);
+  var g = new Dygraph(els.graph, [], dygraphCfg);
   graphs.push({
     g: g,
     targets: parsedTargets,
@@ -606,7 +604,7 @@ function setupTestDashboard() {
       opts.test_metric,
   ];
   var els = createChartEl();
-  mkgraph(els, targets, "test");
+  mkgraph(els, targets, "test", {});
   finishSetup();
 }
 
@@ -621,8 +619,9 @@ function setupDashboard() {
         var cfg = d.state.graphs[gi];
         var title = cfg[0];
         var targets = cfg[1].target;
+        var dygraphOpts = cfg[2];
         var els = createChartEl();
-        mkgraph(els, targets, title);
+        mkgraph(els, targets, title, dygraphOpts);
       }
       finishSetup();
     },

@@ -47,12 +47,14 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
       "graphs":[
          `))
 	for i, g := range data {
+		extraCfg, _ := json.Marshal(g.DygraphOpts)
 		w.Write([]byte(`
          [
             "` + g.Name + `",
             {
                "target":["` + strings.Join(g.Targets, `","`) + `"]
-            }
+            },
+            ` + string(extraCfg) + `
          ]`))
 		if i < len(data)-1 {
 			w.Write([]byte(","))
