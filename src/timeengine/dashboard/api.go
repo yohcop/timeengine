@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"timeengine/users"
@@ -9,6 +10,8 @@ import (
 	"appengine"
 	"appengine/datastore"
 )
+
+var _ = log.Println
 
 func NewDashboard(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)
@@ -98,13 +101,14 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg, err := dashboard.Cfg()
+	obj := make(map[string]interface{})
+	err = json.Unmarshal(dashboard.G, &obj)
 	if err != nil {
 		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
 		return
 	}
 
-	extraCfg, _ := json.MarshalIndent(cfg, "", "  ")
+	extraCfg, _ := json.MarshalIndent(obj, "", "  ")
 	w.Write([]byte(extraCfg))
 }
 
@@ -141,6 +145,12 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rawData := []byte(r.FormValue("data"))
+
+	asInterface := make(map[string]interface{})
+	err = json.Unmarshal(rawData, &asInterface)
+	asInterfaceTxt, _ := json.Marshal(asInterface)
+
 	// Prepare the new config: parse it from JSON.
 	data := DashConfig{}
 	err = json.Unmarshal([]byte(r.FormValue("data")), &data)
@@ -149,6 +159,15 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dashboard.G, _ = json.Marshal(data)
+
+	if len(dashboard.G) != len(asInterfaceTxt) {
+		log.Println(string(dashboard.G))
+		log.Println(string(asInterfaceTxt))
+		http.Error(w, "You must have unknown fields in your json, "+
+			"or missing required fields.",
+			http.StatusUnauthorized)
+		return
+	}
 
 	key := DashboardKey(c, d)
 	if _, err := datastore.Put(c, key, dashboard); err != nil {

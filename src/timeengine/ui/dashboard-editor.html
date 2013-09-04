@@ -6,7 +6,7 @@
   <input type='hidden' id='dash-name' value='{{.Name}}'></input>
   <textarea id='dash-data' class="editor" class="input-block-level" rows="25"
   >{{.Graphs}}</textarea>
-  <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Save</button> (You can auto-indent by saving and refreshing the page)
+  <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Validate and Save</button> (and auto-format)
 
   <p>
 <pre id="result"></pre>
@@ -54,6 +54,7 @@ function saveDashboard() {
   if (!data) {
     return;
   }
+  document.getElementById('dash-data').value = JSON.stringify(data, null, "  ");
 
   $('#save-dash').attr('disabled', 'disabled');
   $.ajax({

@@ -56,47 +56,50 @@ function drawCallback(me, initial) {
 }
 
 function replaceParamsInTargets(targets) {
-  for (var t in targets) {
-    var s = targets[t];
+  for (var target in targets) {
+    var s = targets[target];
     var match = null;
     while (match = s.match(/\$\{(.+?)\}/)) {
       s = s.replace(match[0], opts.params['$' + match[1]]);
-      console.log(s);
     }
-    targets[t] = s;
+    targets[target] = s
   }
 }
 
-function mkgraph(els, targets, expressions, title, dygraphOpts) {
+function setupTargets(targets) {
   replaceParamsInTargets(targets);
-
-  var parsedTargets = {};
-  var labels = ['x'];
-  for (var t in targets) {
-    var target = targets[t];
+  for (var target in targets) {
     var aggregate = 'avg';
-    var name = target;
-    var encodedTarget = target;
+    var name = targets[target];
+    var encodedTarget = name;
 
     var targetCfg = name.split('@');
     if (targetCfg.length == 2) {
       name = targetCfg[0];
       aggregate = targetCfg[1];
     } else {
-      encodedTarget = target + '@' + aggregate;
+      encodedTarget = name + '@' + aggregate;
     }
-    labels.push(t);
-    parsedTargets[t] = encodedTarget;
-    all_targets[encodedTarget] = {name: name, fn: aggregate};
+    if (encodedTarget in all_targets) {
+      all_targets[encodedTarget].aliases.push(target);
+    } else {
+      all_targets[encodedTarget] = {
+        name: name,
+        fn: aggregate,
+        aliases: [target],
+        data: [],
+      };
+    }
   }
-  var parsedExpressions = null;
-  if (expressions) {
-    parsedExpressions = [];
-    labels = ['x'];
-    for (var exp_i in expressions) {
-      labels.push(exp_i);
-      parsedExpressions.push(Parser.parse(expressions[exp_i]));
-    }
+}
+
+function mkgraph(els, expressions, title, dygraphOpts) {
+  var labels = ['x'];
+  var parsedExpressions = [];
+  for (var exp_i in expressions) {
+    labels.push(exp_i);
+    var parsed = Parser.parse(expressions[exp_i]);
+    parsedExpressions.push(parsed);
   }
   dygraphCfg = {
     labels: labels,
@@ -113,10 +116,7 @@ function mkgraph(els, targets, expressions, title, dygraphOpts) {
   var g = new Dygraph(els.graph, [], dygraphCfg);
   graphs.push({
     g: g,
-    targets: parsedTargets,
     expressions: parsedExpressions,
-    data: [],
-    data_by_date: {},
   });
 }
 
@@ -196,6 +196,7 @@ function update(url) {
 		success: function(d) {
       var prev_last = last;
       // Extract all the data by date
+      // time_series -> [[timestamp, value]...]
       var new_data = {};
       for (var i = 0; i < d.length; ++i) {
         var series = d[i];
@@ -210,18 +211,48 @@ function update(url) {
         for (var pi = 0; pi < points.length; ++pi) {
           var ts = points[pi][1];
           var val = points[pi][0];
-          ny.push([ts, val]);
+          var entry = [ts, val];
           if (ts > last) {
             last = ts;
           }
           if (ts < first) {
             first = ts;
           }
+          // Make sure ny is sorted.
+          setInDataArray(ny, ts, entry);
         }
-        new_data[name] = ny;
-      }
 
-      rebuildGraphs(new_data, prev_last);
+        var obj = all_targets[name];
+        if (ny.length != 0) {
+          var start_replace = findSplitPoint(
+              obj.data, ny[0][0]);
+          var end_replace = findSplitPoint(
+              obj.data, ny[ny.length - 1][0]);
+          obj.data =
+            obj.data.slice(0, start_replace).concat(
+                ny).concat(obj.data.slice(end_replace + 1));
+        }
+      }
+      // At this point, for target in all_targets have a data
+      // array that is the sorted list of points for that metric.
+
+      // Compute a mapping keyed by timestamp
+      // (native format for dygraphs.)
+      // timestamp -> metric_name -> value
+      var data_by_date = {};
+      for (var target in all_targets) {
+        var metric = all_targets[target];
+        var series = metric.data;
+        for (var si in series) {
+          var ts = series[si][0];
+          var val = series[si][1];
+          var x = data_by_date[ts];
+          if (!x) { x = {}; }
+          x[target] = val;
+          data_by_date[ts] = x;
+        }
+      }
+      rebuildGraphs(data_by_date, prev_last);
       bye();
     },
     error: function(e) {
@@ -232,79 +263,56 @@ function update(url) {
   });
 }
 
+var maxExecuteErrors = 10;
 function executeExpr(vars, expr) {
-  return expr.evaluate(vars);
+  try {
+    return expr.evaluate(vars);
+  } catch(ex) {
+    if (maxExecuteErrors-- > 0) {
+      console.log(expr.toString(), vars);
+    }
+    return null;
+  }
 }
 
-function processData(targets, rawData, expressions) {
-  if (!expressions) {
-    return rawData;
-  }
-  // rawData is an array, where each element is:
-  // [date, value_for_target0, ..., value_for_targetN]
-  // Expressions reffer to values via v0, v1, ... vN.
+function processData(dataByDate) {
   var result = [];
-  for (var row_i in rawData) {
-    var row = rawData[row_i];
-    var vars = {};
-    var i = 1;
-    for (var target in targets) {
-      vars[target] = row[i++];
-    }
+  for (var gi in graphs) {
+    result.push([]);
+  }
 
-    var newRow = [row[0]];  // Just the date.
-    for (var e in expressions) {
-      newRow.push(executeExpr(vars, expressions[e]));
+  for (var row_i in dataByDate) {
+    var row = dataByDate[row_i];
+    var vars = {};
+    for (var target in all_targets) {
+      var t = all_targets[target];
+      for (var alias_i in t.aliases) {
+        vars[t.aliases[alias_i]] = row[target];
+      }
     }
-    result.push(newRow);
+    // This will contain [[graph1 series], [graph2 series]...]
+    for (var gi in graphs) {
+      var g = graphs[gi];
+      var graphRow = [new Date(row_i * 1000)];  // date.
+      for (var e in g.expressions) {
+        var ex = g.expressions[e];
+        graphRow.push(executeExpr(vars, ex));
+      }
+      result[gi].push(graphRow);
+    }
   }
   return result;
 }
 
-// new_data is series_name -> ts -> val
-function rebuildGraphs(new_data, append_from) {
+function rebuildGraphs(data_by_date, append_from) {
+  var data = processData(data_by_date);
   for (var gi in graphs) {
     var obj = graphs[gi];
     var g = obj.g;
-    var targets = obj.targets;
-
-    // Update the data by date for this graph.
-    // ts -> name -> val
-    var data_by_date = {};
-    for (var ti in targets) {
-      var name = targets[ti];
-      var series = new_data[name];
-      for (var si in series) {
-        var ts = series[si][0];
-        var val = series[si][1];
-        var x = data_by_date[ts];
-        if (!x) { x = {}; }
-        x[name] = val;
-        data_by_date[ts] = x;
-      }
-    }
-
-    //console.log('now building final array from', data_by_date);
-    // Build the list of points from the dictionary.
-    graph_data = [];
-    for (var ts in data_by_date) {
-      var entry = [ new Date(ts * 1000) ];
-      for (var n in targets) {
-        entry.push(data_by_date[ts][targets[n]]);
-      }
-      setInDataArray(graph_data, entry[0], entry);
-    }
-    if (graph_data.length != 0) {
-      var start_replace = findSplitPoint(obj.data, graph_data[0][0]);
-      var end_replace = findSplitPoint(obj.data, graph_data[graph_data.length - 1][0]);
-      obj.data =
-        obj.data.slice(0, start_replace).concat(
-            graph_data).concat(obj.data.slice(end_replace + 1));
-    }
 
     // Update the graph.
     var opts = {
-      file: processData(obj.targets, obj.data, obj.expressions),
+      file: data[gi],
     };
     var win = g.xAxisRange();
     var win_to_last = win[1] - (append_from * 1000);
@@ -409,7 +417,6 @@ function setupUpdates(ms) {
       timer = setTimeout(update, ms);
     }
   } else if (timer) {
-    console.log("unset");
     clearTimeout(timer);
     timer = null;
   }
@@ -546,12 +553,12 @@ function setupDashboard() {
     url: opts.graphite_url + "/api/dashboard/get?dashboard=" + opts.dashboard,
   	dataType: 'json',
   	success: function(d) {
+      setupTargets(d.targets);
       for (var gi = 0; gi < d.graphs.length; ++gi) {
         //if (gi != 1) continue;
         var cfg = d.graphs[gi];
         var els = createChartEl();
-        mkgraph(els, cfg.targets, cfg.expressions, cfg.title,
-          cfg.dygraphOpts);
+        mkgraph(els, cfg.expressions, cfg.name, cfg.dygraphOpts);
       }
       finishSetup();
     },
@@ -608,10 +615,8 @@ function shareView() {
 function shareUrl() {
   var g = graphs[0].g;
   var range = g.xAxisRange();
-  console.log(range);
   var from = new Date(range[0]).toISOString();
   var to = new Date(range[1]).toISOString();
-  console.log(from, to);
   var url = '#' + opts.dashboard;
   for (var k in opts) {
     if (k == 'dashboard' || k == 'params') {
@@ -626,7 +631,6 @@ function shareUrl() {
 }
 
 function loading(isLoading) {
-  console.log(isLoading);
   if (isLoading) {
     $('#loading').show();
   } else {

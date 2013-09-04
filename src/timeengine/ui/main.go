@@ -68,16 +68,14 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Dashboard not found", http.StatusBadRequest)
 		return
 	}
-	jsonConfig := string(dash.G)
-	// Try go get a better formatted version. This may fail if the
-	// data is bad. In that case, we still want to show the bad data
-	// to the user, so he can fix it and save it. Since it won't save
-	// if the format is bad, the user has to fix it.
-	if cfg, err := dash.Cfg(); err == nil {
-		if jscfg, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-			jsonConfig = string(jscfg)
-		}
+	// Try go get a better formatted version.
+	obj := make(map[string]interface{})
+	err = json.Unmarshal(dash.G, &obj)
+	if err != nil {
+		http.Error(w, "Error parsing dashboard config: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
+	jscfg, _ := json.MarshalIndent(obj, "", "  ")
 
 	rootTmpl.ExecuteTemplate(w, "dashboard-editor", &dashboardTmplData{
 		Tpl: rootTmplData{
@@ -85,7 +83,7 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 			Login: users.LogoutURL(appengine.NewContext(r)),
 		},
 		Name:   d,
-		Graphs: jsonConfig,
+		Graphs: string(jscfg),
 	})
 }
 

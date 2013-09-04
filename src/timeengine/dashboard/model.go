@@ -7,6 +7,11 @@ import (
 type Dashboard struct {
 	// Definition. Currently just a string.
 	// It actually is a DashConfig object serialized with JSON.
+	// The reason for it to stay as is, is we can actually change
+	// the definition of DashConfig, without breaking the current
+	// schema. Users can still retrieve the data, but can't save it.
+	// They get a chance to edit the json object, and save it in the
+	// new format.
 	G []byte
 
 	// Name.
@@ -15,16 +20,16 @@ type Dashboard struct {
 }
 
 type DashConfig struct {
-	Description string   `json:"description"`
-	Graphs      []Graph  `json:"graphs"`
-	ACL         []string `json:"acl,omitempty"`
+	Description string `json:"description"`
+	// metric name -> variable name.
+	Targets map[string]string `json:"targets"`
+	Graphs  []Graph           `json:"graphs"`
+	ACL     []string          `json:"acl,omitempty"`
 }
 
 type Graph struct {
 	Name        string                 `json:"name"`
-	Targets     map[string]string      `json:"targets"`
-	Expressions map[string]string      `json:"expressions,omitempty"`
-	Resolution  int64                  `json:"resolution,omitempty"`
+	Expressions map[string]string      `json:"expressions"`
 	DygraphOpts map[string]interface{} `json:"dygraphOpts,omitempty"`
 }
 
