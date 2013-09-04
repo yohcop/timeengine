@@ -33,7 +33,21 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	key := DashboardKey(c, d)
-	dashboard := &Dashboard{}
+	empty, _ := json.Marshal(&DashConfig{
+		Targets: map[string]string{
+			"foo": "my.namespace*my.target.0",
+			"bar": "${namespace}*my.target.1",
+		},
+		Graphs: []Graph{
+			{
+				Name: "First graph",
+				Expressions: map[string]string{
+					"e1": "foo + bar",
+				},
+			},
+		},
+	})
+	dashboard := &Dashboard{G: empty}
 	if _, err := datastore.Put(c, key, dashboard); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

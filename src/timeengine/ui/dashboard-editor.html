@@ -8,27 +8,10 @@
   >{{.Graphs}}</textarea>
   <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Validate and Save</button> (and auto-format)
 
-  <p>
-<pre id="result"></pre>
-</p>
+  <p><pre id="result"></pre></p>
 
-  <h3>Example</h3>
-  <p>Note: never add a trailing <code>,</code> after last dictionary or array element.</p>
-<pre>
-{
-  "graphs": [
-    {
-      "name": "first graph",
-      "targets": [ "my.metric.0", "my.metric.1" ]
-    },
-    {
-      "name": "second graph",
-      "targets": [ "my.metric.2" ]
-    }
-  ],
-  "acl": []
-}
-</pre>
+  <p><a href="https://docs.google.com/document/d/1sHYhryktOHDaqT5s5c7Ue9zpfT3HMp13rj8I3FELTV8">Documentation</a></p>
+
 </div>
 
 <script src="/static3/jsonlint/jsonlint.js"></script>

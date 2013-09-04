@@ -508,7 +508,6 @@ function createChartEl() {
   container.className = 'graph-container';
   graph_el.className = 'graph';
   legend.className = 'legend';
-  legend.style.width=""+opts.graph_width+"px";
   container.appendChild(graph_el);
   container.appendChild(legend);
   document.getElementById('graphs').appendChild(container);

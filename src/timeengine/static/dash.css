@@ -40,14 +40,10 @@ body{
   text-align:right;
   border:1px solid #ccc;
   margin: 10px;
-  padding:10px 10px 28px 10px;
+  padding:10px;
   position:relative;
 }
 .legend{
-  position:absolute;
-  bottom:8px;
-  z-index:1000;
-  background-color:#fff;
 }
 #loading{
   position:fixed;
