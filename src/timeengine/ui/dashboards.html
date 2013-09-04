@@ -3,38 +3,18 @@
 
 <div class="container">
   <h2>Dashboards</h2>
-  <div class="row-fluid">
-    <div class="span6">
-      <form class="form-inline">
-        <fieldset>
-          <legend>Open</legend>
-          <div class="controls controls-row">
-            <label class="span4">Dashboard</label>
-            <label class="span4">With namespace</label>
-          </div>
-          <div class="constrols controls-row">
-            <select class="span4" id="dashboard-list"></select>
-            <select class="span4" id="namespace-list"></select>
-            <button class="span2 btn btn-primary" type="submit" onclick="openDashboard(); return false;">Open</button>
-          </div>
-        </fieldset>
-      </form>
-    </div>
-    <div class="span6">
-      <form>
-        <fieldset>
-          <legend>New dashboard</legend>
-          <label>Name</label>
-          <input type="text" class="input-xlarge" id="new-dashboard-name"></input>
-          <div>
-            <button type="submit" class="btn" onclick="newDashboard(); return false;">Create</button>
-          </div>
-        </fieldset>
-      </form>
-    </div>
-  </div>
+  <form>
+    <fieldset>
+      <legend>New dashboard</legend>
+      <label>Name</label>
+      <input type="text" class="input-xlarge" id="new-dashboard-name"></input>
+      <div>
+        <button type="submit" class="btn" onclick="newDashboard(); return false;">Create</button>
+      </div>
+    </fieldset>
+  </form>
 
-  <h2>List</h2>
+  <h3>List</h3>
   <table id="dashboards-table" class="table table-striped table-hover table-condensed">
     <thead>
       <tr>
@@ -87,7 +67,11 @@ function refreshTable(d) {
     edit.href="/dashboard/edit?dashboard=" + ns.Name;
     edit.textContent = 'Edit';
     td.appendChild(edit);
+    var open = document.createElement('a');
+    open.href="/static/dash.html#" + ns.Name;
+    open.textContent = 'Open';
     tr.appendChild(td);
+    td.appendChild(open);
 
     tb.appendChild(tr);
   }

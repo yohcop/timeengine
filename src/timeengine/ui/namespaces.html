@@ -27,13 +27,6 @@
     </thead>
     <tbody id="namespace-tbody"></tbody>
   </table>
-
-
-  <h2>Push data</h2>
-  <p>
-    <a href="" id="cookie-link" download="timeengine.cookie">Download cookie</a> for authentication with desktop client.
-  </p>
-
 </div>
 
 <script src="/static/api.js"></script>
@@ -113,12 +106,7 @@ function refreshNamespaceTable() {
   );
 }
 
-function setCookieLink() {
-  document.getElementById('cookie-link').href="data:text;charset=utf-8," + document.cookie;
-}
-
 refreshNamespaceTable();
-setCookieLink();
 </script>
 
 {{template "footer"}}

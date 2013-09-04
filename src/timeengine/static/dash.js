@@ -1,10 +1,7 @@
 
 // Default options. These can be specified in the URL as well.
 var opts = {
-  graphite_url: '',
-
-  namespace: '',
-  dashboard: 'ycoppel1',
+  dashboard: '',
   test_metric: '',
 
   auto_fetch: true,
@@ -56,18 +53,32 @@ function drawCallback(me, initial) {
 }
 
 function replaceParamsInTargets(targets) {
+  var missing = {};
   for (var target in targets) {
     var s = targets[target];
     var match = null;
     while (match = s.match(/\$\{(.+?)\}/)) {
-      s = s.replace(match[0], opts.params['$' + match[1]]);
+      var k = '$' + match[1];
+      if (!(k in opts.params) && !(k in missing)) {
+        missing[k] = true;
+      }
+      s = s.replace(match[0], opts.params[k]);
     }
     targets[target] = s
   }
+  console.log('asd');
+  if (Object.keys(missing).length > 0) {
+    alert('Please specify those parameters in the URL:\n' +
+        Object.keys(missing).join(', '));
+    return false;
+  }
+  return true;
 }
 
 function setupTargets(targets) {
-  replaceParamsInTargets(targets);
+  if (!replaceParamsInTargets(targets)) {
+    return;
+  }
   for (var target in targets) {
     var aggregate = 'avg';
     var name = targets[target];
@@ -120,9 +131,6 @@ function mkgraph(els, expressions, title, dygraphOpts) {
   });
 }
 
-function extractNameAndAggregateFn(metric) {
-}
-
 function pollUrl(from, to, summarize) {
   if (Object.keys(all_targets).length == 0) {
     return null;
@@ -145,7 +153,6 @@ function pollUrl(from, to, summarize) {
   var done_targets = {};
   for (var k in all_targets) {
     name = all_targets[k].name;
-    name = addNamespaceToTarget(name);
     if (!summarize) {
       if (!done_targets[name]) {
         targets_q += "&target=" + name;
@@ -160,8 +167,7 @@ function pollUrl(from, to, summarize) {
                        fn + "\")");
     }
   }
-  return opts.graphite_url + '/render/?' +
-    'from=' + left + maybe_to +
+  return '/render/?from=' + left + maybe_to +
     targets_q + '&drawNullAsZero=false&noCache=true&format=json&jsonp=?';
 }
 
@@ -205,7 +211,6 @@ function update(url) {
         if (is_summary) {
           name = is_summary[1];
         }
-        name = removeNamespaceFromTarget(name);
         var points = series.datapoints;
         var ny = [];
         for (var pi = 0; pi < points.length; ++pi) {
@@ -550,7 +555,7 @@ function setupTestDashboard() {
 function setupDashboard() {
   document.getElementById('title').textContent = '#' + opts.dashboard;
   $.ajax({
-    url: opts.graphite_url + "/api/dashboard/get?dashboard=" + opts.dashboard,
+    url: "/api/dashboard/get?dashboard=" + opts.dashboard,
   	dataType: 'json',
   	success: function(d) {
       setupTargets(d.targets);
@@ -566,20 +571,6 @@ function setupDashboard() {
       console.log("error", e);
     }
   });
-}
-
-function addNamespaceToTarget(t) {
-  if (opts.namespace.length > 0) {
-    return opts.namespace + '*' + t;
-  }
-  return t;
-}
-
-function removeNamespaceFromTarget(t) {
-  if (opts.namespace.length > 0) {
-    return t.slice(opts.namespace.length + 1);
-  }
-  return t;
 }
 
 // from and to in milliseconds
