@@ -32,22 +32,34 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := DashboardKey(c, d)
-	empty, _ := json.Marshal(&DashConfig{
-		Targets: map[string]string{
-			"foo": "my.namespace*my.target.0",
-			"bar": "${namespace}*my.target.1",
-		},
-		Graphs: []Graph{
-			{
-				Name: "First graph",
-				Expressions: map[string]string{
-					"e1": "foo + bar",
+	rawData := []byte(r.FormValue("data"))
+	data := make([]byte, 0)
+	if len(rawData) > 0 {
+		if cfg, err := ValidateRawConfig(rawData); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else {
+			data, _ = json.Marshal(cfg)
+		}
+	} else {
+		data, _ = json.Marshal(&DashConfig{
+			Targets: map[string]string{
+				"var1": "my.namespace*my.target.0",
+				"var2": "${namespace}*my.target.${x}",
+			},
+			Graphs: []Graph{
+				{
+					Name: "First graph",
+					Expressions: map[string]string{
+						"Timeseries 1": "var1 + var2",
+					},
 				},
 			},
-		},
-	})
-	dashboard := &Dashboard{G: empty}
+		})
+	}
+
+	key := DashboardKey(c, d)
+	dashboard := &Dashboard{G: data}
 	if _, err := datastore.Put(c, key, dashboard); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -160,31 +172,55 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rawData := []byte(r.FormValue("data"))
+	if data, err := ValidateRawConfig(rawData); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else {
+		dashboard.G, _ = json.Marshal(data)
+	}
 
-	asInterface := make(map[string]interface{})
-	err = json.Unmarshal(rawData, &asInterface)
-	asInterfaceTxt, _ := json.Marshal(asInterface)
+	key := DashboardKey(c, d)
+	if _, err := datastore.Put(c, key, dashboard); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
-	// Prepare the new config: parse it from JSON.
-	data := DashConfig{}
-	err = json.Unmarshal([]byte(r.FormValue("data")), &data)
+// Delete dashboard =======================================
+
+func DeleteDashboard(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
+	if user == nil || err != nil {
+		return
+	}
+
+	// Check if the name is valid, and normalize the name.
+	d, err := ValidDashboard(r.FormValue("dashboard"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	dashboard.G, _ = json.Marshal(data)
 
-	if len(dashboard.G) != len(asInterfaceTxt) {
-		log.Println(string(dashboard.G))
-		log.Println(string(asInterfaceTxt))
-		http.Error(w, "You must have unknown fields in your json, "+
-			"or missing required fields.",
+	// Check if the dashboard exists.
+	c := appengine.NewContext(r)
+	dashboard := GetDashFromDatastore(c, d)
+	if dashboard == nil {
+		http.Error(w, "Dashboard not found", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the user can edit this dashboard.
+	if authorized, err := dashboard.IsAcled(user.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if !authorized {
+		http.Error(w, "Not authorized to edit this dashboard.",
 			http.StatusUnauthorized)
 		return
 	}
 
 	key := DashboardKey(c, d)
-	if _, err := datastore.Put(c, key, dashboard); err != nil {
+	if err := datastore.Delete(c, key); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

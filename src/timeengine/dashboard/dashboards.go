@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"regexp"
@@ -31,4 +32,25 @@ func GetDashFromDatastore(c appengine.Context, name string) *Dashboard {
 		return nil
 	}
 	return ts
+}
+
+func ValidateRawConfig(rawData []byte) (*DashConfig, error) {
+	asInterface := make(map[string]interface{})
+	if err := json.Unmarshal(rawData, &asInterface); err != nil {
+		return nil, err
+	}
+	asInterfaceTxt, _ := json.Marshal(asInterface)
+
+	// Prepare the new config: parse it from JSON.
+	data := DashConfig{}
+	if err := json.Unmarshal(rawData, &data); err != nil {
+		return nil, err
+	}
+	fromCfg, _ := json.Marshal(data)
+
+	if len(fromCfg) != len(asInterfaceTxt) {
+		return nil, errors.New("You have unknown fields in your json, " +
+			"or missing required fields.")
+	}
+	return &data, nil
 }

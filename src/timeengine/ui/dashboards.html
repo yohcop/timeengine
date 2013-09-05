@@ -32,7 +32,7 @@ function newDashboard() {
   var d = document.getElementById('new-dashboard-name').value;
 
   $.ajax({
-    url: "/api/dashboard/new/",
+    url: "/api/dashboard/new",
     data: {'dashboard': d},
   	dataType: 'json',
   	success: function(d) {
@@ -113,7 +113,7 @@ function refreshNamespaces() {
 
 function refreshDashboardTable() {
   $.ajax({
-    url: "/api/dashboard/list/",
+    url: "/api/dashboard/list",
   	dataType: 'json',
   	success: function(d) {
       console.log(d);

@@ -70,12 +70,12 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 	}
 	// Try go get a better formatted version.
 	obj := make(map[string]interface{})
-	err = json.Unmarshal(dash.G, &obj)
-	if err != nil {
-		http.Error(w, "Error parsing dashboard config: "+err.Error(), http.StatusInternalServerError)
-		return
+	jscfg := make([]byte, 0)
+	if err = json.Unmarshal(dash.G, &obj); err == nil {
+		jscfg, _ = json.MarshalIndent(obj, "", "  ")
+	} else {
+		jscfg = dash.G
 	}
-	jscfg, _ := json.MarshalIndent(obj, "", "  ")
 
 	rootTmpl.ExecuteTemplate(w, "dashboard-editor", &dashboardTmplData{
 		Tpl: rootTmplData{

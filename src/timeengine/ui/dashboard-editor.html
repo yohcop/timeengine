@@ -2,16 +2,26 @@
 {{template "header" .Tpl}}
 
 <div class="container">
-  <h2>Dashboard edit</h2>
+  <div class="row">
+    <h2 class=span10>Dashboard: {{.Name}}</h2>
+    <div class=span2 style="text-align:right;vertical-align:bottom">
+      <button onclick="deletedash()" class="btn">Delete</button>
+    </div>
+  </div>
   <input type='hidden' id='dash-name' value='{{.Name}}'></input>
   <textarea id='dash-data' class="editor" class="input-block-level" rows="25"
   >{{.Graphs}}</textarea>
-  <button id='save-dash' type="submit" class="btn btn-primary" onclick="saveDashboard()">Validate and Save</button> (and auto-format)
+  <button id='save-dash' type="submit" class="btn btn-primary" onclick="save()">Validate and Save</button> (and auto-format)
 
   <p><pre id="result"></pre></p>
 
   <p><a href="https://docs.google.com/document/d/1sHYhryktOHDaqT5s5c7Ue9zpfT3HMp13rj8I3FELTV8">Documentation</a></p>
 
+  <h3>Copy</h3>
+  <div class="input-append">
+    <input type="text" class="span2" placeholder="New dashboard" id="new-name">
+    <button type="btn" onclick="copy(); return false;" class="btn">Copy</button>
+  </div>
 </div>
 
 <script src="/static3/jsonlint/jsonlint.js"></script>
@@ -23,16 +33,37 @@ function checkJson(json) {
     return parsed;
   } catch(e) {
     document.getElementById("result").innerHTML = e;
-    document.getElementById("result").className = "fail";
     return null;
   }
 }
 
-function saveDashboard() {
+function save() {
   var dash = document.getElementById('dash-name').value;
   var d = document.getElementById('dash-data').value;
-  console.log(d);
+  saveDashboard(dash, d);
+}
 
+function copy() {
+  var newname = document.getElementById('new-name').value;
+  var d = document.getElementById('dash-data').value;
+  var data = checkJson(d);
+  if (!data) {
+    return;
+  }
+  $.ajax({
+    url: "/api/dashboard/new",
+    data: {'dashboard': newname, 'data': JSON.stringify(data)},
+  	dataType: 'json',
+  	success: function(d) {
+      window.location = '/dashboard/edit?dashboard=' + newname;
+    },
+    error: function(d) {
+      error(d.responseText);
+    }
+  });
+}
+
+function saveDashboard(dash, d) {
   var data = checkJson(d);
   if (!data) {
     return;
@@ -41,7 +72,7 @@ function saveDashboard() {
 
   $('#save-dash').attr('disabled', 'disabled');
   $.ajax({
-    url: "/api/dashboard/save/",
+    url: "/api/dashboard/save",
     data: {'dashboard': dash, 'data': JSON.stringify(data)},
   	dataType: 'json',
   	success: function(d) {
@@ -52,8 +83,7 @@ function saveDashboard() {
       }, 1500);
     },
     error: function(d) {
-      console.log(d);
-      alert(d.responseText);
+      error(d.responseText);
       $('#save-dash').removeAttr('disabled');
       $('#save-dash').addClass('btn-danger');
       setTimeout(function() {
@@ -61,6 +91,27 @@ function saveDashboard() {
       }, 1500);
     }
   });
+}
+
+function deletedash() {
+  var dash = document.getElementById('dash-name').value;
+  $.ajax({
+    url: "/api/dashboard/delete",
+    data: {'dashboard': dash},
+  	dataType: 'json',
+  	success: function(d) {
+      window.location = '/dashboards';
+    },
+    error: function(d) {
+      error(d.responseText);
+    }
+  });
+}
+
+
+function error(str) {
+  console.log(str);
+  document.getElementById("result").innerHTML = str;
 }
 </script>
 {{template "footer"}}

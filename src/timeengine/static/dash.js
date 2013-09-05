@@ -66,7 +66,6 @@ function replaceParamsInTargets(targets) {
     }
     targets[target] = s
   }
-  console.log('asd');
   if (Object.keys(missing).length > 0) {
     alert('Please specify those parameters in the URL:\n' +
         Object.keys(missing).join(', '));

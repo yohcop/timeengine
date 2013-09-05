@@ -24,10 +24,11 @@ func init() {
 	http.HandleFunc("/api/namespace/new/", namespace.NewNamespace)
 	http.HandleFunc("/api/namespace/list/", namespace.ListNamespaces)
 
-	http.HandleFunc("/api/dashboard/new/", dashboard.NewDashboard)
-	http.HandleFunc("/api/dashboard/list/", dashboard.ListDashboards)
-	http.HandleFunc("/api/dashboard/save/", dashboard.SaveDashboard)
+	http.HandleFunc("/api/dashboard/new", dashboard.NewDashboard)
+	http.HandleFunc("/api/dashboard/list", dashboard.ListDashboards)
+	http.HandleFunc("/api/dashboard/save", dashboard.SaveDashboard)
 	http.HandleFunc("/api/dashboard/get", dashboard.GetDashboard)
+	http.HandleFunc("/api/dashboard/delete", dashboard.DeleteDashboard)
 
 	// Backward compatible with graphite:
 	// get a dashboard, and a tiny subset of the json renderer.
