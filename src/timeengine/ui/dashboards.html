@@ -19,6 +19,7 @@
     <thead>
       <tr>
         <th>Dashboard</th>
+        <th>Configurations</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -45,6 +46,31 @@ function newDashboard() {
   });
 }
 
+function preselectionUrl(dash, params) {
+  var p = '';
+  for (var k in params) {
+    p += '&$' + k + '=' + params[k];
+  }
+  return '/static/dash.html#' + dash + p;
+}
+
+function makePreselectionLinks(dash, preselections) {
+  var links = [];
+  for (var name in preselections) {
+    links.push({
+      name: name,
+      path: preselectionUrl(dash, preselections[name]),
+    });
+  }
+  if (links.length == 0) {
+    links.push({
+      name: '(default)',
+      path: preselectionUrl(dash, {}),
+    });
+  }
+  return links;
+}
+
 function refreshTable(d) {
   var tb = document.createElement('tbody');
   tb.id='dashboards-tbody';
@@ -63,15 +89,25 @@ function refreshTable(d) {
     tr.appendChild(td);
 
     var td = document.createElement('td');
+    var preselect = document.createElement('ul');
+    var links = makePreselectionLinks(ns.Name, ns.Preselection);
+    for (var l in links) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = links[l].path;
+      a.textContent = links[l].name;
+      li.appendChild(a);
+      preselect.appendChild(li);
+    }
+    td.appendChild(preselect);
+    tr.appendChild(td);
+
+    var td = document.createElement('td');
     var edit = document.createElement('a');
     edit.href="/dashboard/edit?dashboard=" + ns.Name;
     edit.textContent = 'Edit';
     td.appendChild(edit);
-    var open = document.createElement('a');
-    open.href="/static/dash.html#" + ns.Name;
-    open.textContent = 'Open';
     tr.appendChild(td);
-    td.appendChild(open);
 
     tb.appendChild(tr);
   }
@@ -81,36 +117,6 @@ function refreshTable(d) {
     document.getElementById('dashboards-tbody'));
 }
 
-function updateDropdown(id, list) {
-  $('#' + id).empty();
-  for (var i = 0; i < list.length; ++i) {
-    var name = list[i];
-    var el = document.createElement('option');
-    el.textContent = name;
-    el.value = name;
-    document.getElementById(id).appendChild(el);
-  }
-}
-
-function refreshDropdown(d) {
-  var l = [];
-  for (var i = 0; i < d.Dashboards.length; ++i) {
-    l[l.length] = d.Dashboards[i].Name;
-  }
-  updateDropdown('dashboard-list', l);
-}
-
-function refreshNamespaces() {
-  listNamespaces(function(d) {
-    var l = [];
-    for (var i = 0; i < d.Namespaces.length; ++i) {
-      l[l.length] = d.Namespaces[i].Name;
-    }
-    updateDropdown('namespace-list', l);
-  }, function(d) {
-  });
-}
-
 function refreshDashboardTable() {
   $.ajax({
     url: "/api/dashboard/list",
@@ -118,7 +124,6 @@ function refreshDashboardTable() {
   	success: function(d) {
       console.log(d);
       refreshTable(d);
-      refreshDropdown(d);
     },
     error: function(d) {
       console.log(d);
@@ -127,15 +132,7 @@ function refreshDashboardTable() {
   });
 }
 
-function openDashboard() {
-  var dash = $('#dashboard-list').val();
-  var namespace = $('#namespace-list').val();
-  var url = "/static/dash.html#" + dash + "&namespace=" + namespace;
-  window.open(url);
-}
-
 refreshDashboardTable();
-refreshNamespaces();
 </script>
 {{template "footer"}}
 {{end}}

@@ -52,17 +52,23 @@ function drawCallback(me, initial) {
   fetchOnMoveTimer();
 }
 
-function replaceParamsInTargets(targets) {
+function replaceParamsInTargets(targets, vars) {
+  console.log(vars);
   var missing = {};
   for (var target in targets) {
     var s = targets[target];
     var match = null;
     while (match = s.match(/\$\{(.+?)\}/)) {
-      var k = '$' + match[1];
-      if (!(k in opts.params) && !(k in missing)) {
+      var k = match[1];
+      var replace = '';
+      if (k in opts.params) {
+        replace = opts.params[k];
+      } else if (k in vars) {
+        replace = vars[k];
+      } else if (!(k in missing)) {
         missing[k] = true;
       }
-      s = s.replace(match[0], opts.params[k]);
+      s = s.replace(match[0], replace);
     }
     targets[target] = s
   }
@@ -74,8 +80,9 @@ function replaceParamsInTargets(targets) {
   return true;
 }
 
-function setupTargets(targets) {
-  if (!replaceParamsInTargets(targets)) {
+function setupTargets(targets, preselections) {
+  var defaultPreselect = preselections && preselections['default'] || {};
+  if (!replaceParamsInTargets(targets, defaultPreselect)) {
     return;
   }
   for (var target in targets) {
@@ -527,7 +534,7 @@ function parseOpts() {
       else if (val == 'false') val = false;
     }
     if (key[0] == '$') {
-      opts.params[key] = val;
+      opts.params[key.substring(1)] = val;
     } else {
       opts[key] = val;
     }
@@ -556,7 +563,8 @@ function setupDashboard() {
     url: "/api/dashboard/get?dashboard=" + opts.dashboard,
   	dataType: 'json',
   	success: function(d) {
-      setupTargets(d.targets);
+      console.log(d);
+      setupTargets(d.targets, d.preselection);
       for (var gi = 0; gi < d.graphs.length; ++gi) {
         //if (gi != 1) continue;
         var cfg = d.graphs[gi];

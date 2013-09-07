@@ -19,12 +19,18 @@ type Dashboard struct {
 	name string
 }
 
+// Variable name -> default.
+type Preselection map[string]string
+
 type DashConfig struct {
 	Description string `json:"description"`
 	// metric name -> variable name.
 	Targets map[string]string `json:"targets"`
 	Graphs  []Graph           `json:"graphs"`
 	ACL     []string          `json:"acl,omitempty"`
+	// preselection name -> config.
+	// The "default" preselection can be used.
+	Preselection map[string]Preselection `json:"preselection,omitempty"`
 }
 
 type Graph struct {

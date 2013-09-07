@@ -69,8 +69,9 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 // Dashboard list =============================================
 
 type DashboardResp struct {
-	Name        string
-	Description string
+	Name         string
+	Description  string
+	Preselection map[string]Preselection
 }
 
 type DashboardListResp struct {
@@ -98,6 +99,7 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 		}
 		if cfg, err := dash.Cfg(); err == nil {
 			dashresp.Description = cfg.Description
+			dashresp.Preselection = cfg.Preselection
 		}
 		resp.Dashboards = append(resp.Dashboards, dashresp)
 	}
@@ -171,6 +173,7 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Make sure the data is valid json.
 	rawData := []byte(r.FormValue("data"))
 	if data, err := ValidateRawConfig(rawData); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -179,6 +182,18 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 		dashboard.G, _ = json.Marshal(data)
 	}
 
+	// Check if the user can still edit the dashboard after it is
+	// saved...
+	if authorized, err := dashboard.IsAcled(user.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if !authorized {
+		http.Error(w, "You can't remove yourself from the ACL list.",
+			http.StatusUnauthorized)
+		return
+	}
+
+	// Ok.. write to datastore then!
 	key := DashboardKey(c, d)
 	if _, err := datastore.Put(c, key, dashboard); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
