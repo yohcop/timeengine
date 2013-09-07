@@ -80,9 +80,9 @@ function replaceParamsInTargets(targets, vars) {
   return true;
 }
 
-function setupTargets(targets, preselections) {
-  var defaultPreselect = preselections && preselections['default'] || {};
-  if (!replaceParamsInTargets(targets, defaultPreselect)) {
+function setupTargets(targets, presets) {
+  var defaultPreset = presets && presets['default'] || {};
+  if (!replaceParamsInTargets(targets, defaultPreset)) {
     return;
   }
   for (var target in targets) {
@@ -564,7 +564,7 @@ function setupDashboard() {
   	dataType: 'json',
   	success: function(d) {
       console.log(d);
-      setupTargets(d.targets, d.preselection);
+      setupTargets(d.targets, d.presets);
       for (var gi = 0; gi < d.graphs.length; ++gi) {
         //if (gi != 1) continue;
         var cfg = d.graphs[gi];

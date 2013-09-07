@@ -19,7 +19,7 @@
     <thead>
       <tr>
         <th>Dashboard</th>
-        <th>Configurations</th>
+        <th>Presets</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -46,7 +46,7 @@ function newDashboard() {
   });
 }
 
-function preselectionUrl(dash, params) {
+function presetUrl(dash, params) {
   var p = '';
   for (var k in params) {
     p += '&$' + k + '=' + params[k];
@@ -54,18 +54,18 @@ function preselectionUrl(dash, params) {
   return '/static/dash.html#' + dash + p;
 }
 
-function makePreselectionLinks(dash, preselections) {
+function makePresetsLinks(dash, presets) {
   var links = [];
-  for (var name in preselections) {
+  for (var name in presets) {
     links.push({
       name: name,
-      path: preselectionUrl(dash, preselections[name]),
+      path: presetUrl(dash, presets[name]),
     });
   }
   if (links.length == 0) {
     links.push({
       name: '(default)',
-      path: preselectionUrl(dash, {}),
+      path: presetUrl(dash, {}),
     });
   }
   return links;
@@ -89,17 +89,17 @@ function refreshTable(d) {
     tr.appendChild(td);
 
     var td = document.createElement('td');
-    var preselect = document.createElement('ul');
-    var links = makePreselectionLinks(ns.Name, ns.Preselection);
+    var presets = document.createElement('ul');
+    var links = makePresetsLinks(ns.Name, ns.Presets);
     for (var l in links) {
       var li = document.createElement('li');
       var a = document.createElement('a');
       a.href = links[l].path;
       a.textContent = links[l].name;
       li.appendChild(a);
-      preselect.appendChild(li);
+      presets.appendChild(li);
     }
-    td.appendChild(preselect);
+    td.appendChild(presets);
     tr.appendChild(td);
 
     var td = document.createElement('td');

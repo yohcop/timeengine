@@ -69,9 +69,9 @@ func NewDashboard(w http.ResponseWriter, r *http.Request) {
 // Dashboard list =============================================
 
 type DashboardResp struct {
-	Name         string
-	Description  string
-	Preselection map[string]Preselection
+	Name        string
+	Description string
+	Presets     map[string]Preset
 }
 
 type DashboardListResp struct {
@@ -99,7 +99,7 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 		}
 		if cfg, err := dash.Cfg(); err == nil {
 			dashresp.Description = cfg.Description
-			dashresp.Preselection = cfg.Preselection
+			dashresp.Presets = cfg.Presets
 		}
 		resp.Dashboards = append(resp.Dashboards, dashresp)
 	}
