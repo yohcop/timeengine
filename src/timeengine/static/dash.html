@@ -26,6 +26,7 @@
       <button onclick="setLast(60*60)">-1h</button>
       <button onclick="setLast(15*60)">-15m</button>
       <button onclick="setLast(60)">-60s</button>
+      <button onclick="toggleDates()">Date/time</button>
     </span>
 
     <!--span class="bt-group">
@@ -44,13 +45,39 @@
     </span>
 
     <span class="bt-group bt-group-end">
-      <button onclick="shareView()">Share view</button>
+      <button onclick="shareView()">Update URL</button>
     </span>
   </span>
 </div>
 
 <div id="graphs"></div>
 <div id="loading" style="display:none">Loading...</div>
+
+<div id="datetime" style="display:none">
+  <table>
+  <tr>
+    <td>From</td>
+    <td>
+      <input id="date-from" type="date">
+      <input id="time-from" type="time">
+    </td>
+  </tr>
+  <tr>
+    <td>To</td>
+    <td>
+      <input id="date-to" type="date">
+      <input id="time-to" type="time">
+    </td>
+  </tr>
+  <tr>
+    <td></td>
+    <td style="text-align:right">
+      <button onclick="closeDateSelector()">Cancel</button>
+      <button onclick="validateDates()">Ok</button>
+    </td>
+  </tr>
+  </table>
+</div>
 
 <script src="/static/dash.js"></script>
 <script>

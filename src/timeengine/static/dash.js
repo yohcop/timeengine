@@ -48,6 +48,7 @@ function drawCallback(me, initial) {
       dateWindow: range,
     });
   }
+  setDatesInSelector(range);
   blockRedraw = false;
   fetchOnMoveTimer();
 }
@@ -604,9 +605,6 @@ function finishSetup() {
 function shareView() {
   var url = shareUrl();
   document.location.hash = url;
-  alert('Copy the URL. By default, this will load the timestamp ' +
-      'at full resolution. If your time range is too wide, you ' +
-      'may consider editing the URL before sharing it.');
 }
 
 function shareUrl() {
@@ -633,4 +631,36 @@ function loading(isLoading) {
   } else {
     $('#loading').hide();
   }
+}
+
+function setDatesInSelector(range) {
+  $('#date-from')[0].value = new Date(range[0])
+    .toISOString().substring(0, 10);
+  $('#time-from')[0].value = new Date(range[0])
+    .toISOString().substring(11, 19);
+  $('#date-to')[0].value = new Date(range[1])
+    .toISOString().substring(0, 10);
+  $('#time-to')[0].value = new Date(range[1])
+    .toISOString().substring(11, 19);
+}
+
+function toggleDates() {
+  $('#datetime').toggle();
+}
+
+function closeDateSelector() {
+  $('#datetime').hide();
+}
+
+function inputsToDate(input) {
+  var d= $('#date-' + input).val().split("-");
+  var t= $('#time-' + input).val().split(":");
+  return new Date(d[0],(d[1]-1),d[2],t[0],t[1],t[2]);
+}
+
+function validateDates() {
+  loadDates(
+      inputsToDate('from').valueOf(),
+      inputsToDate('to').valueOf());
+  closeDateSelector();
 }

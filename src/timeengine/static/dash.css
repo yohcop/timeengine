@@ -54,4 +54,9 @@ body{
   font-weight: bold;
   color:#fff;
 }
-
+#datetime{
+  position:fixed;
+  right: 4px;
+  top: 60px;
+  border: 1px solid #bbb;
+}
