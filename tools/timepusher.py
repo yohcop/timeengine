@@ -4,32 +4,100 @@ A detailed description of timepusher.
 """
 
 import argparse
-import Queue
-import time
-import threading
-import sys
-import urllib2
-import fileinput
+import cookielib
+import getpass
 import json
+import Queue
+import sys
+import threading
+import time
+import urllib
+import urllib2
 
-namespace='my.namespace'
-nssecret='5p7oparwpa'
-min_wait_in_sec=0
-server='http://localhost:8080'
-cookie_file='/tmp/cookie'
+parser = argparse.ArgumentParser()
+parser.add_argument('--namespace', '--ns',
+                    required=True, help='namespace')
+parser.add_argument('--secret',
+                    required=True, help="Namespace's secret")
+parser.add_argument('--max_qps', default=1, type=float,
+                    help="Maximum number of request per second to "
+                         "send to the server.")
+parser.add_argument('--server', default='http://localhost:8080',
+                    help='URL for the server. Starts with http[s]://')
+parser.add_argument('--cookie_jar', default='~/.config/timepusher',
+                    help='Cookie jar path.')
+parser.add_argument('--dev_cookie',
+                    help='For dev only. Cookie content for auth.')
+args = parser.parse_args(sys.argv[1:])
 
 #### End flags
 
-push_url = server + '/api/timeseries/put'
-cookie_file_content = open(cookie_file).read()
+push_url = args.server + '/api/timeseries/put'
+app_name = "timeengine"
+verify_auth_url = args.server + '/checkauth'
+
+cookiejar = cookielib.LWPCookieJar(args.cookie_jar)
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar))
+urllib2.install_opener(opener)
+
+queue = Queue.Queue()
+stop_pusher = threading.Event()
+
+
+def auth():
+  try:
+    cookiejar.load()
+  except:
+    pass
+
+  if isAuth():
+    return True
+  else:
+    email = raw_input('Email: ')
+    password = getpass.getpass()
+
+  auth_uri = 'https://www.google.com/accounts/ClientLogin'
+  authreq_data = urllib.urlencode({ "Email":   email,
+                                    "Passwd":  password,
+                                    "service": "ah",
+                                    "source":  app_name,
+                                    "accountType": "HOSTED_OR_GOOGLE" })
+  auth_req = urllib2.Request(auth_uri, data=authreq_data)
+  auth_resp = urllib2.urlopen(auth_req)
+  auth_resp_body = auth_resp.read()
+  auth_resp_dict = dict(x.split("=")
+                        for x in auth_resp_body.split("\n") if x)
+  authtoken = auth_resp_dict["Auth"]
+
+  serv_args = {}
+  serv_args['continue'] = verify_auth_url
+  serv_args['auth']     = authtoken
+
+  full_serv_uri = args.server + "/_ah/login?%s" % (
+      urllib.urlencode(serv_args))
+
+  serv_req = urllib2.Request(full_serv_uri)
+  serv_resp = urllib2.urlopen(serv_req)
+  serv_resp_body = serv_resp.read()
+
+  cookiejar.save()
+  print serv_resp_body
+  return 'ok' == serv_resp_body
+
+def isAuth():
+  req = urllib2.Request(verify_auth_url)
+  if args.dev_cookie:
+    req.add_header('Cookie', args.dev_cookie)
+  resp = urllib2.urlopen(req)
+  serv_resp_body = resp.read()
+  cookiejar.save()
+  return 'ok' == serv_resp_body
 
 def send(obj):
-  opener = urllib2.build_opener()
-  opener.addheaders.append(('Cookie', cookie_file_content))
-  opener.addheaders.append(('User-agent', 'timepusher'))
   d = json.dumps(obj)
   try:
-    r = opener.open(push_url, d)
+    req = urllib2.Request(push_url, d)
+    r = urllib2.urlopen(req)
     print r.getcode()
   except urllib2.URLError, e:
     print e
@@ -112,18 +180,22 @@ def pusher():
     time.sleep(to_sleep)
 
 
-stop_pusher = threading.Event()
-queue = Queue.Queue()
+def main():
+  if not auth():
+    print "Could not authenticate."
+    return
 
-t = threading.Thread(target=pusher)
-t.start()
+  t = threading.Thread(target=pusher)
+  t.start()
 
-while True:
-  line = sys.stdin.readline()
-  if line == '':
-    break
-  queue.put(line)
+  while True:
+    line = sys.stdin.readline()
+    if line == 'quitquitquit\n':
+      break
+    queue.put(line)
 
-# Stop the pusher thread.
-print "bye"
-stop_pusher.set()
+  # Stop the pusher thread.
+  print "bye"
+  stop_pusher.set()
+
+main()

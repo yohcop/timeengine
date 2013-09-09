@@ -8,21 +8,26 @@ import (
 	"timeengine/namespace"
 	"timeengine/timeseries"
 	"timeengine/ui"
+	"timeengine/users"
 )
 
 func init() {
-	// Us pages.
+	// UI pages.
 	http.HandleFunc("/", ui.Index)
 	http.HandleFunc("/dashboards", ui.Dashboards)
 	http.HandleFunc("/dashboard/edit", ui.DashboardEditor)
 	http.HandleFunc("/namespaces", ui.Namespaces)
 
+	// Test page. Verifies that the user is logged in, and can send
+	// data. Mostly for use in shell scripts.
+	http.HandleFunc("/checkauth", checkUser)
+
 	// Api stuff. Doesn't render a UI, but handles ajax calls.
 	http.HandleFunc("/api/timeseries/put", timeseries.PutDataPoints)
 	http.HandleFunc("/api/timeseries/get", timeseries.GetDataPoints)
 
-	http.HandleFunc("/api/namespace/new/", namespace.NewNamespace)
-	http.HandleFunc("/api/namespace/list/", namespace.ListNamespaces)
+	http.HandleFunc("/api/namespace/new", namespace.NewNamespace)
+	http.HandleFunc("/api/namespace/list", namespace.ListNamespaces)
 
 	http.HandleFunc("/api/dashboard/new", dashboard.NewDashboard)
 	http.HandleFunc("/api/dashboard/list", dashboard.ListDashboards)
@@ -36,4 +41,13 @@ func init() {
 
 	// Task queues handlers
 	http.HandleFunc("/tasks/aggregateminute", timeseries.Aggregate60sTask)
+}
+
+func checkUser(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
+	if user == nil || err != nil {
+		http.Error(w, "", http.StatusUnauthorized)
+		return
+	}
+	w.Write([]byte("ok"))
 }

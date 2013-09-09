@@ -1,5 +1,5 @@
 {{define "namespaces"}}
-{{template "header"}}
+{{template "header" .}}
 
 <div class="container">
   <h2>Namespace</h2>
@@ -27,6 +27,8 @@
     </thead>
     <tbody id="namespace-tbody"></tbody>
   </table>
+
+  <div id="command"></div>
 </div>
 
 <script src="/static/api.js"></script>
@@ -36,7 +38,7 @@ function newNamespace() {
   console.log(ns);
 
   $.ajax({
-    url: "/api/namespace/new/",
+    url: "/api/namespace/new",
     data: {'ns': ns},
   	dataType: 'json',
   	success: function(d) {
