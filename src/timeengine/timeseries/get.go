@@ -66,6 +66,11 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 		maxPoints := int(serie.To - serie.T)
 		if res > 1 {
 			maxPoints /= int(res)
+		} else {
+			// res is in microseconds. so if res >1, the division is
+			// enough. Otherwise, we need to convert to seconds from
+			// microseconds.
+			maxPoints /= 1000000
 		}
 		s := &SerieData{
 			Target:     serie.M + "@" + serie.S,

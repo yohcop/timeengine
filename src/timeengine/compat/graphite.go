@@ -2,6 +2,7 @@ package compat
 
 import (
 	"encoding/json"
+	"log"
 	"regexp"
 	"strconv"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"appengine"
 	"net/http"
 )
+
+var _ = log.Println
 
 func Render(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)
@@ -26,7 +29,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now().Unix()
+	now := time.Now().UnixNano() / 1000
 	until, err := strconv.ParseInt(r.FormValue("until"), 10, 64)
 	if err != nil || until > now {
 		until = now
@@ -36,6 +39,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 	jsonp := r.FormValue("jsonp")
 
 	if len(targets) == 0 || until < from {
+		log.Println("no targets or bad dates", from, until, len(targets))
 		return
 	}
 
@@ -62,7 +66,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 			summary = match[3]
 		}
 		s := &timeseries.SerieDef{
-			R:  r,
+			R:  r * 100000,
 			T:  from,
 			To: until,
 			M:  t,

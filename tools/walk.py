@@ -27,7 +27,7 @@ while max_out > 0:
     else:
       d=time_start
     vals[i] = walk(v)
-    print "my.metric.%d %f %d" % (i, vals[i], d)
+    print "my.metric.%d %f %f" % (i, vals[i], d)
     sys.stdout.flush()
 
   time_start+=1

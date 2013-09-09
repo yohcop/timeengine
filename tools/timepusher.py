@@ -100,15 +100,18 @@ def send(obj):
   d = json.dumps(obj)
   try:
     req = urllib2.Request(push_url, d)
+    if args.dev_cookie:
+      req.add_header('Cookie', args.dev_cookie)
     r = urllib2.urlopen(req)
+    print r.read()
     print r.getcode()
   except urllib2.URLError, e:
     print e
 
 def make_data(lines):
   data={
-      'ns': namespace,
-      'nssecret': nssecret,
+      'ns': args.namespace,
+      'nssecret': args.secret,
   }
   pts = []
   last_pt = None
@@ -116,7 +119,7 @@ def make_data(lines):
   for l in lines:
     metric = l[0]
     value = float(l[1])
-    date = int(l[2])
+    date = int(float(l[2]) * 1000 * 1000) # seconds to microseconds.
     resolution = len(l) == 4 and int(l[4]) or 1
 
     val = {
@@ -178,7 +181,7 @@ def pusher():
       return
 
     end_time = time.clock()
-    to_sleep = min_wait_in_sec - (end_time - start_time)
+    to_sleep = (1.0/args.max_qps) - (end_time - start_time)
     if to_sleep < 0:
       to_sleep = 0
     time.sleep(to_sleep)

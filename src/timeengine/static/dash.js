@@ -22,9 +22,8 @@ var opts = {
 };
 
 // State stuff.
-var first = Math.ceil(new Date().valueOf() / 1000);
-var last = Math.ceil(new Date().valueOf() / 1000);
-var min_freq = 10;
+var last = new Date().getTime() * 1000;
+var min_freq = 10 * 1000 * 1000;  // 10 seconds in microseconds.
 // Dygraph -> object{g, targets, data}
 var graphs = [];
 // target -> aggregate function. target is of the form
@@ -138,6 +137,7 @@ function mkgraph(els, expressions, title, dygraphOpts) {
   });
 }
 
+// From and to in microseconds (s * 1000000)
 function pollUrl(from, to, summarize) {
   if (Object.keys(all_targets).length == 0) {
     return null;
@@ -188,13 +188,13 @@ function update(url) {
     loading(true);
   }
   timer = null;
-  var start_update = new Date().valueOf();
+  var start_update = new Date().getTime();
   var bye = function() {
     if (outOfBand) {
       loading(false);
       return;
     }
-    var end_update = new Date().valueOf();
+    var end_update = new Date().getTime();
     setupUpdates(1000 - (end_update - start_update));
   }
 
@@ -226,9 +226,6 @@ function update(url) {
           var entry = [ts, val];
           if (ts > last) {
             last = ts;
-          }
-          if (ts < first) {
-            first = ts;
           }
           // Make sure ny is sorted.
           setInDataArray(ny, ts, entry);
@@ -305,7 +302,7 @@ function processData(dataByDate) {
     // This will contain [[graph1 series], [graph2 series]...]
     for (var gi in graphs) {
       var g = graphs[gi];
-      var graphRow = [new Date(row_i * 1000)];  // date.
+      var graphRow = [new Date(row_i / 1000)];  // date.
       for (var e in g.expressions) {
         var ex = g.expressions[e];
         graphRow.push(executeExpr(vars, ex));
@@ -316,6 +313,7 @@ function processData(dataByDate) {
   return result;
 }
 
+// append_from in usec.
 function rebuildGraphs(data_by_date, append_from) {
   var data = processData(data_by_date);
   for (var gi in graphs) {
@@ -327,12 +325,12 @@ function rebuildGraphs(data_by_date, append_from) {
       file: data[gi],
     };
     var win = g.xAxisRange();
-    var win_to_last = win[1] - (append_from * 1000);
-    var following = g.isZoomed('x') && win_to_last > -5000;//< 1000 && win_to_last > -1000;
+    var win_to_last = win[1] * 1000 - (append_from);
+    var following = g.isZoomed('x') && win_to_last > -5000000;//< 1000 && win_to_last > -1000;
     if (following) {
       if (win_to_last < 0) win_to_last = 0;
       // Move the window.
-      var head = last * 1000 + win_to_last;
+      var head = (last + win_to_last) / 1000;
       opts['dateWindow'] = [head - win[1] + win[0], head];
     }
     blockRedraw = true;
@@ -348,14 +346,14 @@ function findSplitPoint(ar, ts) {
       return pivot;
     }
     if(end-start == 1) {
-      if (ar[start] && ar[start][0].valueOf() == ts.valueOf()) {
+      if (ar[start] && ar[start][0] == ts) {
         return start;
       }
-      if (ar[end] && ar[end][0].valueOf() == ts.valueOf()) {
+      if (ar[end] && ar[end][0] == ts) {
         return end;
       }
       return pivot;
-    } else if(ar[pivot][0].valueOf() < ts.valueOf()) {
+    } else if(ar[pivot][0] < ts) {
       return findTsInternal(ar, pivot, end);
     } else {
       return findTsInternal(ar, start, pivot);
@@ -367,11 +365,11 @@ function findSplitPoint(ar, ts) {
 function setInDataArray(ar, ts, ts_val) {
   // First, shortcuts, as these are 2 very common operations:
   if (ar[ar.length-1] &&
-      ar[ar.length-1][0].valueOf() < ts_val[0].valueOf()) {
+      ar[ar.length-1][0] < ts_val[0]) {
     ar.push(ts_val);
     return;
   }
-  if (ar[0] && ar[0][0].valueOf() > ts_val[0].valueOf()) {
+  if (ar[0] && ar[0][0] > ts_val[0]) {
     ar.unshift(ts_val);
     return;
   }
@@ -385,7 +383,7 @@ function setInDataArray(ar, ts, ts_val) {
     var pivot = Math.floor(start + (end - start) / 2);
     if(end-start <= 1) {
       if (ar[pivot + 1]) {
-        if (ar[pivot + 1][0].valueOf() == ts.valueOf()) {
+        if (ar[pivot + 1][0] == ts) {
           cp(ts_val, ar[pivot + 1]);
           return ar;
         }
@@ -456,7 +454,7 @@ function toggleSync() {
 }
 
 function setLast(secs) {
-  var now = new Date().valueOf();
+  var now = new Date().getTime();
   var left = (now - secs*1000);
   setDateWindow(left, now - 1000);
 }
@@ -473,13 +471,6 @@ function setDateWindow(left, right) {
   blockRedraw = false;
 }
 
-function loadMore(secs, res) {
-  console.log(first);
-  var url = pollUrl(first - secs, first, res);
-  console.log(url);
-  update(url);
-}
-
 // from and to are in milliseconds.
 function findGoodSummary(from, to, full_res) {
   var g = graphs[0].g;
@@ -489,12 +480,12 @@ function findGoodSummary(from, to, full_res) {
   var url = "";
   if (sec_per_pixel <= 1 || full_res) {
     url = pollUrl(
-        Math.floor(from / 1000),
-        Math.floor(to / 1000));
+        Math.floor(from * 1000),
+        Math.floor(to * 1000));
   } else {
     url = pollUrl(
-        Math.floor(from / 1000),
-        Math.floor(to / 1000),
+        Math.floor(from * 1000),
+        Math.floor(to * 1000),
         sec_per_pixel + 's');
   }
   return url;
@@ -593,8 +584,8 @@ function loadDates(from, to, full_res) {
 function finishSetup() {
   if (opts.from && opts.to) {
     loadDates(
-        new Date(opts.from).valueOf(),
-        new Date(opts.to).valueOf(),
+        new Date(opts.from).getTime(),
+        new Date(opts.to).getTime(),
         opts.full_res_preload);
   } else {
     update();
@@ -620,7 +611,7 @@ function shareUrl() {
     url += '&' + k + '=' + opts[k];
   }
   for (var p in opts.params) {
-    url += '&' + p + '=' + opts.params[p];
+    url += '&$' + p + '=' + opts.params[p];
   }
   return url;
 }
@@ -660,7 +651,7 @@ function inputsToDate(input) {
 
 function validateDates() {
   loadDates(
-      inputsToDate('from').valueOf(),
-      inputsToDate('to').valueOf());
+      inputsToDate('from').getTime(),
+      inputsToDate('to').getTime());
   closeDateSelector();
 }

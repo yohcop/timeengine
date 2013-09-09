@@ -1,9 +1,9 @@
 package points
 
 const (
-	s = 1
-	m = 60
-	h = 60 * 60
+	s = 1000000
+	m = 60 * s
+	h = 60 * m
 )
 
 // A FrameSize represent a resolution.
@@ -50,7 +50,7 @@ func SelectFrameSize(res int64) FrameSize {
 	return AvailableFrameSizes[len(AvailableFrameSizes)-1]
 }
 
-func (r FrameSize) Secs() int64 {
+func (r FrameSize) USecs() int64 {
 	return int64(r)
 }
 
@@ -117,10 +117,10 @@ func NewSpan(fs FrameSize, from, to int64) *Span {
 func (s *Span) HigherRes() *Span {
 	l := s.fs.higherRes()
 	from := l.KeyFrame(s.from.Ts())
-	to := l.KeyFrame(s.to.Ts() + s.fs.Secs() - 1)
+	to := l.KeyFrame(s.to.Ts() + s.fs.USecs() - 1)
 	return &Span{l, from, to}
 }
 
 func (s *Span) NumFrames() int {
-	return 1 + int((s.to.Ts()-s.from.Ts())/s.fs.Secs())
+	return 1 + int((s.to.Ts()-s.from.Ts())/s.fs.USecs())
 }

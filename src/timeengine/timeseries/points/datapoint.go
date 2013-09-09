@@ -27,7 +27,7 @@ type P struct {
 
 	// Key
 	k string
-	// Timestamp, Unix time.
+	// Timestamp, Unix time in microseconds.
 	t int64
 	// Metric name.
 	m string

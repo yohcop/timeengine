@@ -3,6 +3,7 @@ package timeseries
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"timeengine/ae/impl"
@@ -12,6 +13,8 @@ import (
 
 	"appengine"
 )
+
+var _ = log.Println
 
 // Put ===================================================
 
@@ -44,7 +47,7 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(body, &req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	c := appengine.NewContext(r)
