@@ -24,6 +24,9 @@ parser.add_argument('--max_qps', default=1, type=float,
                          "send to the server.")
 parser.add_argument('--server', default='http://localhost:8080',
                     help='URL for the server. Starts with http[s]://')
+parser.add_argument('--max_push_size', default=200, type=int,
+                    help='Maximum number of datapoints to send to '
+                    'the server in a single request.')
 parser.add_argument('--cookie_jar', default='~/.config/timepusher',
                     help='Cookie jar path.')
 parser.add_argument('--dev_cookie',
@@ -148,8 +151,9 @@ def pusher():
     # break when either:
     # - (queue is empty AND we have at least one line)
     # - we have already 200 lines.
-    while not (queue.empty() and len(lines) > 0 or len(lines) >= 200 or
-               (queue.empty() and stop_pusher.is_set())):
+    while not (queue.empty() and len(lines) > 0
+               or len(lines) >= args.max_push_size
+               or (queue.empty() and stop_pusher.is_set())):
       try:
         l = queue.get(True, 1)
         parts = l.split()
