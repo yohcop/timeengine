@@ -229,21 +229,32 @@ function update(url) {
           }
           // Make sure ny is sorted.
           setInDataArray(ny, ts, entry);
+          //ny.push(entry);
         }
 
-        var obj = all_targets[name];
-        if (ny.length != 0) {
-          var start_replace = findSplitPoint(
-              obj.data, ny[0][0]);
-          var end_replace = findSplitPoint(
-              obj.data, ny[ny.length - 1][0]);
-          obj.data =
-            obj.data.slice(0, start_replace).concat(
-                ny).concat(obj.data.slice(end_replace + 1));
+        for (var target in all_targets) {
+          // When we request raw data, the time serie name does not
+          // include @avg, or @min, etc, since they are all the same.
+          // So we apply those values to every target that start with
+          // the name we got.
+          if (target == name ||
+              target.substring(0, name.length + 1) == name + '@') {
+            var obj = all_targets[target];
+            if (ny.length != 0) {
+              var start_replace = findSplitPoint(
+                  obj.data, ny[0][0]);
+              var end_replace = findSplitPoint(
+                  obj.data, ny[ny.length - 1][0]);
+              obj.data =
+                obj.data.slice(0, start_replace).concat(
+                    ny).concat(obj.data.slice(end_replace + 1));
+            }
+          }
         }
       }
       // At this point, for target in all_targets have a data
-      // array that is the sorted list of points for that metric.
+      // array that is the sorted (by timestamp) list of points for that
+      // metric.
 
       // Compute a mapping keyed by timestamp
       // (native format for dygraphs.)
@@ -252,16 +263,18 @@ function update(url) {
       for (var target in all_targets) {
         var metric = all_targets[target];
         var series = metric.data;
+        console.log(target, series.length);
         for (var si in series) {
           var ts = series[si][0];
           var val = series[si][1];
           var x = data_by_date[ts];
-          if (!x) { x = {}; }
+          if (!x) { x = {ts: ts}; }
           x[target] = val;
           data_by_date[ts] = x;
         }
       }
-      rebuildGraphs(data_by_date, prev_last);
+      var sorted_data_by_date = dictToArray(data_by_date, 'ts')
+      rebuildGraphs(sorted_data_by_date, prev_last);
       bye();
     },
     error: function(e) {
@@ -270,6 +283,15 @@ function update(url) {
       bye();
     },
   });
+}
+
+function dictToArray(d, k) {
+  var r = [];
+  for (var i in d) {
+    r.push(d[i]);
+  }
+  r.sort(function(a, b) { return a.ts - b.ts; });
+  return r;
 }
 
 var maxExecuteErrors = 10;
@@ -284,7 +306,9 @@ function executeExpr(vars, expr) {
   }
 }
 
+dbg2 = null;
 function processData(dataByDate) {
+  dbg2 = dataByDate;
   var result = [];
   for (var gi in graphs) {
     result.push([]);
@@ -302,7 +326,7 @@ function processData(dataByDate) {
     // This will contain [[graph1 series], [graph2 series]...]
     for (var gi in graphs) {
       var g = graphs[gi];
-      var graphRow = [new Date(row_i / 1000)];  // date.
+      var graphRow = [new Date(row.ts / 1000)];  // date.
       for (var e in g.expressions) {
         var ex = g.expressions[e];
         graphRow.push(executeExpr(vars, ex));
@@ -313,9 +337,11 @@ function processData(dataByDate) {
   return result;
 }
 
+dbg = null;
 // append_from in usec.
 function rebuildGraphs(data_by_date, append_from) {
   var data = processData(data_by_date);
+  dbg = data;
   for (var gi in graphs) {
     var obj = graphs[gi];
     var g = obj.g;
@@ -365,15 +391,22 @@ function findSplitPoint(ar, ts) {
 function setInDataArray(ar, ts, ts_val) {
   // First, shortcuts, as these are 2 very common operations:
   if (ar[ar.length-1] &&
-      ar[ar.length-1][0] < ts_val[0]) {
+      ar[ar.length-1][0] < ts) {
     ar.push(ts_val);
     return;
   }
-  if (ar[0] && ar[0][0] > ts_val[0]) {
+  if (ar[0] && ar[0][0] > ts) {
     ar.unshift(ts_val);
     return;
   }
 
+  var pivot = findSplitPoint(ar, ts);
+  if (ar[pivot] && ar[pivot][0] == ts) {
+    ar[pivot] = ts_val;
+  } else {
+    ar.splice(pivot + 1, 0, ts_val);
+  }
+  /*
   function cp(from, to) {
     for (var i in from) {
       to[i] = from[i];
@@ -402,6 +435,7 @@ function setInDataArray(ar, ts, ts_val) {
   }
 
   return findTs(ar, 0, ar.length);
+  */
 }
 
 function toggleUpdates() {

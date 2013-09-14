@@ -75,3 +75,4 @@ func (p *P) GetAvg() float64 { return p.V }
 func (p *P) GetSum() float64 { return p.V }
 func (p *P) GetMin() float64 { return p.V }
 func (p *P) GetMax() float64 { return p.V }
+func (p *P) HasStats() bool { return false }

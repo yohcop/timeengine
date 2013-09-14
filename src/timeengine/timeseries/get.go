@@ -63,9 +63,9 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 		k := encodeSerieDef(serie)
 		res := points.SelectFrameSize(serie.R)
 		pts, _ := data[k]
-		maxPoints := int(serie.To - serie.T)
+		maxPoints := serie.To - serie.T
 		if res > 1 {
-			maxPoints /= int(res)
+			maxPoints /= int64(res)
 		} else {
 			// res is in microseconds. so if res >1, the division is
 			// enough. Otherwise, we need to convert to seconds from
@@ -73,8 +73,11 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 			maxPoints /= 1000000
 		}
 		s := &SerieData{
-			Target:     serie.M + "@" + serie.S,
-			Datapoints: make([]*DataPoint, 0, maxPoints),
+			Target:     serie.M,
+			Datapoints: make([]*DataPoint, 0, int(maxPoints)),
+		}
+		if len(pts) > 0 && pts[0].HasStats() {
+			s.Target += "@" + serie.S
 		}
 		summaryFn := points.GetSummarySelector(serie.S)
 		for _, p := range pts {

@@ -31,6 +31,7 @@ type stats struct {
 type StatsDataPoint interface {
 	GetTs() int64
 
+	HasStats() bool
 	GetAvg() float64
 	GetSum() float64
 	GetMin() float64
@@ -102,6 +103,7 @@ func (f *frame) GetAvg() float64 { return f.Stats.Avg }
 func (f *frame) GetSum() float64 { return f.Stats.Sum }
 func (f *frame) GetMin() float64 { return f.Stats.Min }
 func (f *frame) GetMax() float64 { return f.Stats.Max }
+func (f *frame) HasStats() bool { return true }
 
 // === stats ==============================================
 
