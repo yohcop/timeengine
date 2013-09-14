@@ -8,6 +8,8 @@ import cookielib
 import getpass
 import json
 import Queue
+import socket
+import SocketServer
 import sys
 import threading
 import time
@@ -19,6 +21,9 @@ parser.add_argument('--namespace', '--ns',
                     required=True, help='namespace')
 parser.add_argument('--secret',
                     required=True, help="Namespace's secret")
+parser.add_argument('--port', default=0, type=int,
+                    help="If non 0, starts a server on that port "
+                    "listening for input. Otherwise, reads from stdin.")
 parser.add_argument('--max_qps', default=1, type=float,
                     help="Maximum number of request per second to "
                          "send to the server.")
@@ -53,7 +58,7 @@ def auth():
   except:
     pass
 
-  if isAuth():
+  if is_authentified():
     return True
   else:
     email = raw_input('Email: ')
@@ -87,7 +92,8 @@ def auth():
   print serv_resp_body
   return 'ok' == serv_resp_body
 
-def isAuth():
+
+def is_authentified():
   req = urllib2.Request(verify_auth_url)
   if args.dev_cookie:
     req.add_header('Cookie', args.dev_cookie)
@@ -95,6 +101,7 @@ def isAuth():
   serv_resp_body = resp.read()
   cookiejar.save()
   return 'ok' == serv_resp_body
+
 
 def send(obj):
   d = json.dumps(obj)
@@ -107,6 +114,7 @@ def send(obj):
     print r.getcode()
   except urllib2.URLError, e:
     print e
+
 
 def make_data(lines):
   data={
@@ -187,6 +195,36 @@ def pusher():
     time.sleep(to_sleep)
 
 
+def read_from_stdin():
+  while True:
+    line = sys.stdin.readline()
+    if line == 'quitquitquit\n':
+      break
+    queue.put(line)
+
+
+class SocketHandler(SocketServer.BaseRequestHandler):
+  def handle(self):
+    print dir(self.request)
+    f = self.request.makefile()
+    while True:
+      line =  f.readline()
+      if line == 'quitquitquit\n' or not line:
+        break
+      queue.put(line)
+
+
+class ThreadedSocketHandler(SocketServer.ThreadingMixIn,
+                            SocketServer.TCPServer):
+  pass
+
+
+def read_from_socket(port):
+  server = ThreadedSocketHandler(('', port), SocketHandler)
+  print "Listening on port", port
+  server.serve_forever()
+
+
 def main():
   if not auth():
     print "Could not authenticate."
@@ -195,14 +233,15 @@ def main():
   t = threading.Thread(target=pusher)
   t.start()
 
-  while True:
-    line = sys.stdin.readline()
-    if line == 'quitquitquit\n':
-      break
-    queue.put(line)
+  if args.port:
+    read_from_socket(args.port)
+  else:
+    read_from_stdin()
 
   # Stop the pusher thread.
   print "bye"
   stop_pusher.set()
 
-main()
+
+if __name__ == '__main__':
+  main()
