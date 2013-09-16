@@ -40,7 +40,7 @@ func init() {
 	http.HandleFunc("/render/", compat.Render)
 
 	// Task queues handlers
-	http.HandleFunc("/tasks/aggregateminute", timeseries.Aggregate60sTask)
+	http.HandleFunc("/tasks/summarize60", timeseries.Summarize60sTask)
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {

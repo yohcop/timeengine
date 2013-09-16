@@ -9,10 +9,10 @@ import (
 var _ = log.Println
 
 func GetPoints(c ae.Context, metric string, span *Span) ([]StatsDataPoint, error) {
-	if span.fs.USecs() == 0 || span.to.Ts()-span.from.Ts() <= 120*s {
+	if span.ss.USecs() == 0 || span.to.Ts()-span.from.Ts() <= 120*s {
 		return getRawPoints(c, metric, span.from.Ts(), span.to.Ts())
 	}
-	return getFromFrames(c, metric, span)
+	return getFromSummaries(c, metric, span)
 }
 
 func getRawPoints(c ae.Context, metric string, from, to int64) ([]StatsDataPoint, error) {
@@ -31,25 +31,25 @@ func getRawPoints(c ae.Context, metric string, from, to int64) ([]StatsDataPoint
 	return stats, nil
 }
 
-func getFromFrames(c ae.Context, metric string, span *Span) (
+func getFromSummaries(c ae.Context, metric string, span *Span) (
 	[]StatsDataPoint, error) {
-	pts := make([]*frame, 0)
-	keys, err := c.DsGetBetweenKeys("F",
-		aggregateKeyName(metric, span.fs, span.from),
-		aggregateKeyName(metric, span.fs, span.to),
+	pts := make([]*summary, 0)
+	keys, err := c.DsGetBetweenKeys(summaryDatastoreType,
+		summaryKeyName(metric, span.ss, span.from),
+		summaryKeyName(metric, span.ss, span.to),
 		-1, &pts)
 	if err != nil {
 		return nil, err
 	}
 	stats := make([]StatsDataPoint, len(pts))
 	for i, p := range pts {
-		metric, fsize, kf, err := decodeAggregateKeyName(keys[i])
+		metric, ssize, sk, err := decodeSummaryKeyName(keys[i])
 		if err != nil {
 			return nil, err
 		}
 		p.metric = metric
-		p.fs = fsize
-		p.kf = kf
+		p.ss = ssize
+		p.sk = sk
 		stats[i] = p
 	}
 	return stats, nil

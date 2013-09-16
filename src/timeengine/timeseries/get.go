@@ -35,7 +35,7 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 	done := make(chan error)
 	for key, serie := range defs {
 		go func(k string, s *SerieDef) {
-			res := points.SelectFrameSize(s.R)
+			res := points.SelectSummarySize(s.R)
 			pts, err := points.GetPoints(c, s.M,
 				points.NewSpan(res, s.T, s.To))
 			if err != nil {
@@ -61,7 +61,7 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 	// data retrieved by the go routines.
 	for _, serie := range req.Serie {
 		k := encodeSerieDef(serie)
-		res := points.SelectFrameSize(serie.R)
+		res := points.SelectSummarySize(serie.R)
 		pts, _ := data[k]
 		maxPoints := serie.To - serie.T
 		if res > 1 {

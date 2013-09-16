@@ -26,8 +26,8 @@ var last = new Date().getTime() * 1000;
 var min_freq = 10 * 1000 * 1000;  // 10 seconds in microseconds.
 // Dygraph -> object{g, targets, data}
 var graphs = [];
-// target -> aggregate function. target is of the form
-// "target_name@aggregate_fn", e.g. "my.metric@avg"
+// target -> summary function. target is of the form
+// "target_name@summary_fn", e.g. "my.metric@avg"
 // This is use for fetching, so we don't fetch the same
 // metrics multiple times if they are used in different
 // graphs.
@@ -86,23 +86,23 @@ function setupTargets(targets, presets) {
     return;
   }
   for (var target in targets) {
-    var aggregate = 'avg';
+    var summary = 'avg';
     var name = targets[target];
     var encodedTarget = name;
 
     var targetCfg = name.split('@');
     if (targetCfg.length == 2) {
       name = targetCfg[0];
-      aggregate = targetCfg[1];
+      summary = targetCfg[1];
     } else {
-      encodedTarget = name + '@' + aggregate;
+      encodedTarget = name + '@' + summary;
     }
     if (encodedTarget in all_targets) {
       all_targets[encodedTarget].aliases.push(target);
     } else {
       all_targets[encodedTarget] = {
         name: name,
-        fn: aggregate,
+        fn: summary,
         aliases: [target],
         data: [],
       };
@@ -155,7 +155,7 @@ function pollUrl(from, to, summarize) {
 
   var targets_q = "";
   // We save here the targets we already requested. There may
-  // be some duplicates, since all_targets key includes the aggregate
+  // be some duplicates, since all_targets key includes the summary
   // function, but when we request full data, we don't use this.
   var done_targets = {};
   for (var k in all_targets) {

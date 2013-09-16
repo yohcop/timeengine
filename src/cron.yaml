@@ -1,4 +1,4 @@
 cron:
 - description: Update minute frames
-  url: /tasks/aggregateminute
+  url: /tasks/summarize60
   schedule: every 1 minutes
