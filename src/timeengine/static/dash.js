@@ -263,7 +263,6 @@ function update(url) {
       for (var target in all_targets) {
         var metric = all_targets[target];
         var series = metric.data;
-        console.log(target, series.length);
         for (var si in series) {
           var ts = series[si][0];
           var val = series[si][1];
