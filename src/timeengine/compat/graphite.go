@@ -81,7 +81,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s, _ := json.MarshalIndent(resp.Series, "", "  ")
+	s, _ := json.Marshal(resp.Series)
 	if len(jsonp) > 0 {
 		w.Write([]byte(jsonp))
 		w.Write([]byte("("))
