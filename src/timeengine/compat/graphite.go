@@ -66,7 +66,7 @@ func Render(w http.ResponseWriter, r *http.Request) {
 			summary = match[3]
 		}
 		s := &timeseries.SerieDef{
-			R:  r * 100000,
+			R:  r * 1000000,
 			T:  from,
 			To: until,
 			M:  t,

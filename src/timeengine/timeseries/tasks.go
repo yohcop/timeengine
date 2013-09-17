@@ -26,7 +26,8 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 	objs := make([]points.MetricUpdate, 0)
 	// Get the top ones. Since they are sorted by when they were
 	// inserted, we get the oldest ones.
-	keys, err := c.DsGetBetweenKeys("MU", "", to, -1, &objs)
+	keys, err := c.DsGetBetweenKeys(
+		points.MetricUpdateDatastoreType, "", to, -1, &objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,14 +47,13 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 			for _, res := range points.AvailableSummarySizes[1:] {
 				_, err := points.BuildSummaries(c, metric, points.NewSpan(res, summary, summary))
 				if err != nil {
-					log.Println(err.Error())
+					log.Println("Task error:", err.Error())
 				} else {
 					toRemove = append(toRemove, k)
 				}
 			}
-
-			c.PutMulti("M", metricKeys, metrics)
 		}
 	}
-	c.DeleteMulti("MU", toRemove)
+	c.PutMulti(points.MetricDatastoreType, metricKeys, metrics)
+	c.DeleteMulti(points.MetricUpdateDatastoreType, toRemove)
 }

@@ -40,6 +40,8 @@ func BuildSummaries(c ae.Context, metric string, span *Span) ([]*summary, error)
 		newKeys = append(newKeys, summaryKeyName(metric, span.ss, sk))
 	}
 
-	err = c.PutMulti(summaryDatastoreType, newKeys, newSummaries)
+	if len(newKeys) > 0 {
+		err = c.PutMulti(summaryDatastoreType, newKeys, newSummaries)
+	}
 	return newSummaries, err
 }

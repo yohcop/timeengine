@@ -205,7 +205,6 @@ def read_from_stdin():
 
 class SocketHandler(SocketServer.BaseRequestHandler):
   def handle(self):
-    print dir(self.request)
     f = self.request.makefile()
     while True:
       line =  f.readline()

@@ -73,7 +73,6 @@ const summaryDatastoreType = "S"
 type summary struct {
 	Stats stats `datastore:"s,noindex"`
 
-	// Childrens stored only contain
 	Children []stats `datastore:"c,noindex"`
 
 	// The rest is NOT stored in the datastore or memcache.
@@ -199,7 +198,7 @@ func decodeSummaryKeyName(key string) (
 
 func newSummary(metric string, ss SummarySize, sk SummaryKey,
 	using []StatsDataPoint) *summary {
-	s := *newStats(sk.Ts())
+	s := newStats(sk.Ts())
 	children := make([]stats, 0)
 	for _, f := range using {
 		s.update(f.GetAvg(), f.GetSum(), f.GetMin(), f.GetMax())
@@ -207,7 +206,7 @@ func newSummary(metric string, ss SummarySize, sk SummaryKey,
 	}
 	return &summary{
 		// TODO: Avg should be normalized based on duration of each value.
-		Stats:    s,
+		Stats:    *s,
 		Children: children,
 
 		metric: metric,

@@ -12,6 +12,8 @@ import (
 	"appengine"
 )
 
+var _ = log.Println
+
 var rootTmpl = template.Must(template.ParseGlob("timeengine/ui/*.html"))
 
 type rootTmplData struct {
@@ -88,7 +90,6 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 }
 
 func Namespaces(w http.ResponseWriter, r *http.Request) {
-	log.Println("foo")
 	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
 		return

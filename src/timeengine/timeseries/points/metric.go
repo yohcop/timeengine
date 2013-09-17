@@ -14,6 +14,9 @@ type Metric struct {
 type MetricUpdate struct {
 }
 
+const MetricDatastoreType = "M"
+const MetricUpdateDatastoreType = "MU"
+
 // === MetricUpdate ==============================================
 
 func MetricUpdateKey(now, ts int64, metric string) string {

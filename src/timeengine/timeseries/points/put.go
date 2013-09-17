@@ -30,6 +30,7 @@ func PutRawPoints(c ae.Context, pts []*P) error {
 		updateKeys = append(updateKeys, MetricUpdateKey(now, p.t, p.m))
 	}
 
-	c.PutMulti("MU", updateKeys, make([]MetricUpdate, len(updateKeys)))
-	return c.PutMulti("P", keys, pts)
+	c.PutMulti(MetricUpdateDatastoreType, updateKeys,
+		make([]MetricUpdate, len(updateKeys)))
+	return c.PutMulti(pointDatastoreType, keys, pts)
 }

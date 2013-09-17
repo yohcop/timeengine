@@ -35,6 +35,8 @@ type P struct {
 	ns string
 }
 
+const pointDatastoreType = "P"
+
 func NewP(value float64, timestamp int64, metric string) *P {
 	return &P{V: value, t: timestamp, m: metric}
 }
