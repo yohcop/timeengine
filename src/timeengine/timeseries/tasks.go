@@ -33,10 +33,13 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metrics := make([]*points.Metric, 0, len(keys))
+	metricKeys := make([]string, 0, len(keys))
+
 	toRemove := make([]string, 0, len(keys))
 	for _, k := range keys {
 		if _, summary, metric, err := points.MetricUpdateKeyDecode(k); err == nil {
-			metrics = append(metrics, &points.Metric{metric})
+			metrics = append(metrics, &points.Metric{})
+			metricKeys = append(metricKeys, metric)
 			// Only generate 1 summary for now. We can be smarter by agregating
 			// multiple keys, but it will rarely be useful as we generate
 			// those every minute anyway.
@@ -48,6 +51,8 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 					toRemove = append(toRemove, k)
 				}
 			}
+
+			c.PutMulti("M", metricKeys, metrics)
 		}
 	}
 	c.DeleteMulti("MU", toRemove)

@@ -175,7 +175,8 @@ func (s *Span) NumSummaries() int {
 // === Summary ================================================
 
 func summaryKeyName(metric string, r SummarySize, sk SummaryKey) string {
-	return fmt.Sprintf("%s@%d@%010d", metric, r, sk)
+	// We convert the summary size in seconds to save bytes in the key.
+	return fmt.Sprintf("%s@%d@%010d", metric, int64(r)/s, sk)
 }
 
 func decodeSummaryKeyName(key string) (
@@ -191,7 +192,7 @@ func decodeSummaryKeyName(key string) (
 		if err != nil {
 			return "", 0, 0, err
 		}
-		return metric, SummarySize(iss), SummaryKey(isk), nil
+		return metric, SummarySize(iss * s), SummaryKey(isk), nil
 	}
 	return "", 0, 0, errors.New("Bad key")
 }

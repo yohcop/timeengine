@@ -22,7 +22,7 @@ func minMaxForTask(tasks map[string][]int64, key string, ts int64) []int64 {
 
 func PutRawPoints(c ae.Context, pts []*P) error {
 	keys := make([]string, 0, len(pts))
-	now := time.Now().Unix()
+	now := time.Now().Unix() * s
 	updateKeys := make([]string, 0, len(pts))
 
 	for _, p := range pts {

@@ -8,12 +8,13 @@ import (
 )
 
 type Metric struct {
-	Name string `datastore:"m,noindex"`
 }
 
 // Key = summary(updateTime, 60s)@summary(ts, 60s)@metricname
 type MetricUpdate struct {
 }
+
+// === MetricUpdate ==============================================
 
 func MetricUpdateKey(now, ts int64, metric string) string {
 	res := SelectSummarySize(60 * s)
