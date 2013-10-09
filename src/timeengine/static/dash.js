@@ -326,11 +326,20 @@ function processData(dataByDate) {
     for (var gi in graphs) {
       var g = graphs[gi];
       var graphRow = [new Date(row.ts / 1000)];  // date.
+      var has_data = false;
       for (var e in g.expressions) {
         var ex = g.expressions[e];
-        graphRow.push(executeExpr(vars, ex));
+        var res = executeExpr(vars, ex);
+        if (res) {
+          has_data = true;
+          graphRow.push(res);
+        } else {
+          graphRow.push(null);
+        }
       }
-      result[gi].push(graphRow);
+      if (has_data) {
+        result[gi].push(graphRow);
+      }
     }
   }
   return result;
@@ -502,6 +511,7 @@ function setDateWindow(left, right) {
     g.updateOptions({'dateWindow': [left, right]});
   }
   blockRedraw = false;
+  loadFromZoom(false);
 }
 
 // from and to are in milliseconds.
