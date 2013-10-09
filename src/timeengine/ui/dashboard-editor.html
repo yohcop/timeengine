@@ -53,8 +53,9 @@ function copy() {
   $.ajax({
     url: "/api/dashboard/new",
     data: {'dashboard': newname, 'data': JSON.stringify(data)},
-  	dataType: 'json',
-  	success: function(d) {
+    dataType: 'json',
+    type: 'POST',
+    success: function(d) {
       window.location = '/dashboard/edit?dashboard=' + newname;
     },
     error: function(d) {
@@ -74,8 +75,9 @@ function saveDashboard(dash, d) {
   $.ajax({
     url: "/api/dashboard/save",
     data: {'dashboard': dash, 'data': JSON.stringify(data)},
-  	dataType: 'json',
-  	success: function(d) {
+    dataType: 'json',
+    type: 'POST',
+    success: function(d) {
       $('#save-dash').removeAttr('disabled');
       $('#save-dash').addClass('btn-success');
       setTimeout(function() {
@@ -98,8 +100,8 @@ function deletedash() {
   $.ajax({
     url: "/api/dashboard/delete",
     data: {'dashboard': dash},
-  	dataType: 'json',
-  	success: function(d) {
+    dataType: 'json',
+    success: function(d) {
       window.location = '/dashboards';
     },
     error: function(d) {
