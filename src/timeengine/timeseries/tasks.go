@@ -13,6 +13,7 @@ import (
 )
 
 var _ = log.Println
+
 const oneMinute = int64(60 * 1000000)
 
 func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +37,6 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 
 	metrics := make([]*points.Metric, 0, len(keys))
 	metricKeys := make([]string, 0, len(keys))
-
 	toRemove := make([]string, 0, len(keys))
 	for _, k := range keys {
 		if _, summary, metric, err := points.MetricUpdateKeyDecode(k); err == nil {
@@ -53,8 +53,29 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 					toRemove = append(toRemove, k)
 				}
 			}
+			if len(metricKeys) >= 500 || len(toRemove) >= 100 {
+				// 500 is the max. flush now.
+				// toRemove grows slightly faster since there are 3 summary sizes.
+				if err := c.PutMulti(points.MetricDatastoreType, metricKeys, metrics); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if err := c.DeleteMulti(points.MetricUpdateDatastoreType, toRemove); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				metrics = make([]*points.Metric, 0, len(keys))
+				metricKeys = make([]string, 0, len(keys))
+				toRemove = make([]string, 0, len(keys))
+			}
 		}
 	}
-	c.PutMulti(points.MetricDatastoreType, metricKeys, metrics)
-	c.DeleteMulti(points.MetricUpdateDatastoreType, toRemove)
+	if err := c.PutMulti(points.MetricDatastoreType, metricKeys, metrics); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := c.DeleteMulti(points.MetricUpdateDatastoreType, toRemove); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
