@@ -689,7 +689,7 @@ function closeDateSelector() {
 function inputsToDate(input) {
   var d= $('#date-' + input).val().split("-");
   var t= $('#time-' + input).val().split(":");
-  return new Date(d[0],(d[1]-1),d[2],t[0],t[1],t[2]);
+  return new Date(d[0],(d[1]-1),d[2],t[0],t[1]);
 }
 
 function validateDates() {

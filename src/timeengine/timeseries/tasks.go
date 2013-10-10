@@ -29,7 +29,7 @@ func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 	// Get the top ones. Since they are sorted by when they were
 	// inserted, we get the oldest ones.
 	keys, err := c.DsGetBetweenKeys(
-		points.MetricUpdateDatastoreType, "", to, 500, &objs)
+		points.MetricUpdateDatastoreType, "", to, 1000, &objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
