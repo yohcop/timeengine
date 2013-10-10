@@ -18,8 +18,12 @@ type Appengine struct {
 func (ae *Appengine) DsGetBetweenKeys(kind, from, to string, limit int, els interface{}) (keys []string, err error) {
 	q := datastore.NewQuery(kind)
 	q = q.Order("__key__")
-	q = q.Filter("__key__ >=", datastore.NewKey(ae.C, kind, from, 0, nil))
-	q = q.Filter("__key__ <=", datastore.NewKey(ae.C, kind, to, 0, nil))
+	if len(from) > 0 {
+		q = q.Filter("__key__ >=", datastore.NewKey(ae.C, kind, from, 0, nil))
+	}
+	if len(to) > 0 {
+		q = q.Filter("__key__ <=", datastore.NewKey(ae.C, kind, to, 0, nil))
+	}
 	if limit > 0 {
 		q = q.Limit(limit)
 	}

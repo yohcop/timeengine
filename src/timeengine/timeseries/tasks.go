@@ -13,21 +13,22 @@ import (
 )
 
 var _ = log.Println
+const oneMinute = int64(60 * 1000000)
 
 func Summarize60sTask(w http.ResponseWriter, r *http.Request) {
 	c := &impl.Appengine{appengine.NewContext(r)}
 
-	res := points.SelectSummarySize(60)
+	res := points.SelectSummarySize(oneMinute)
 
 	// Fetch work.
-	now := time.Now().Unix()
-	to := fmt.Sprintf("%d@9999999999", int64(res.SummaryKey(now))-60)
+	now := time.Now().Unix() * 1000000
+	to := fmt.Sprintf("%d@9", res.SummaryKey(now).Ts()-oneMinute)
 
 	objs := make([]points.MetricUpdate, 0)
 	// Get the top ones. Since they are sorted by when they were
 	// inserted, we get the oldest ones.
 	keys, err := c.DsGetBetweenKeys(
-		points.MetricUpdateDatastoreType, "", to, -1, &objs)
+		points.MetricUpdateDatastoreType, "", to, 500, &objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
