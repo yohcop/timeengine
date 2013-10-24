@@ -1,4 +1,4 @@
 
 queue:
-- name: aggregate
+- name: summary
   rate: 1/s

@@ -39,8 +39,10 @@ func init() {
 	// get a dashboard, and a tiny subset of the json renderer.
 	http.HandleFunc("/render/", compat.Render)
 
-	// Task queues handlers
-	http.HandleFunc("/tasks/summarize60", timeseries.Summarize60sTask)
+	// Task and queues handlers
+	http.HandleFunc("/tasks/summarize60", timeseries.SummarizeCron)
+	http.HandleFunc(timeseries.SummarizeQueueUrl,
+      timeseries.SummarizeTask)
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {
