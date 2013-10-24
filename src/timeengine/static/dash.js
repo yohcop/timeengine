@@ -1,4 +1,3 @@
-
 // Default options. These can be specified in the URL as well.
 var opts = {
   dashboard: '',
@@ -15,7 +14,6 @@ var opts = {
   // Preloading
   from: 0,
   to: 0,
-  full_res_preload: false,
 
   // Params for dashboard config.
   params: {},
@@ -33,8 +31,21 @@ var graphs = [];
 // graphs.
 var all_targets = {};
 var timer = null;
+var fullRefreshCount = 60;
 var fetchTimer = null;
 var blockRedraw = false;
+var loadingCount = 0;  // number of in-flight requests.
+
+// A set of constants for durations in miliseconds.
+var ms1s = 1000;
+var ms1m = 60 * ms1s;
+var ms1h = 60 * ms1m;
+var ms1d = 24 * ms1h;
+// A set of constants for durations in microseconds.
+var us1s = 1000000;
+var us1m = 60 * us1s;
+var us1h = 60 * us1m;
+var us1d = 24 * us1h;
 
 function drawCallback(me, initial) {
   if (blockRedraw || initial || !opts.sync_graphs) return;
@@ -53,7 +64,6 @@ function drawCallback(me, initial) {
 }
 
 function replaceParamsInTargets(targets, vars) {
-  console.log(vars);
   var missing = {};
   for (var target in targets) {
     var s = targets[target];
@@ -72,9 +82,13 @@ function replaceParamsInTargets(targets, vars) {
     }
     targets[target] = s
   }
-  if (Object.keys(missing).length > 0) {
+  var missingList = [];
+  for (var k in missing) {
+    missingList.push(k);
+  }
+  if (missingList.length > 0) {
     alert('Please specify those parameters in the URL:\n' +
-        Object.keys(missing).join(', '));
+        missingList.join(', '));
     return false;
   }
   return true;
@@ -137,11 +151,17 @@ function mkgraph(els, expressions, title, dygraphOpts) {
   });
 }
 
-// From and to in microseconds (s * 1000000)
+// From and to in microseconds (s * 1,000,000)
 function pollUrl(from, to, summarize) {
-  if (Object.keys(all_targets).length == 0) {
+  var ok = false;
+  for (var k in all_targets) {
+    ok = true;
+    break
+  }
+  if (!ok) {
     return null;
   }
+
   var left = 0;
   if (from) {
     left = from;
@@ -174,33 +194,38 @@ function pollUrl(from, to, summarize) {
                        fn + "\")");
     }
   }
-  return '/render/?from=' + left + maybe_to +
-    targets_q + '&drawNullAsZero=false&noCache=true&format=json&jsonp=?';
+  return '/render/?from=' + left + maybe_to + targets_q + '&jsonp=?';
 }
 
-function update(url) {
-  // TODO: wrap update in another function that calls setupUpdates
-  // correctly, instead of the hack of looking if url is defined.
-  var outOfBand = (url != undefined);
-  if (outOfBand) {
-    // Only show the loading sign for 'out of band' (i.e. not on timer)
-    // updates, otherwise, it's annoying.
-    loading(true);
-  }
+function autoUpdate() {
   timer = null;
+  // Every minute, refresh the zoom,
+  // TODO: only if following.
+  fullRefreshCount--;
+  if (fullRefreshCount <= 0) {
+    loadFromZoom();
+    fullRefreshCount = 60;
+  }
   var start_update = new Date().getTime();
-  var bye = function() {
-    if (outOfBand) {
-      loading(false);
-      return;
-    }
+  var url = pollUrl();
+  update(url, function() {
     var end_update = new Date().getTime();
     setupUpdates(1000 - (end_update - start_update));
-  }
+  });
+}
 
-  if (!url) url = pollUrl();
+function manualUpdate(urls) {
+  loading(urls.length);
+  for (var i in urls) {
+    update(urls[i], function() {
+        loading(-1);
+    });
+  }
+}
+
+function update(url, donecb) {
   if (!url) {
-    bye();
+    donecb();
     return;
   }
   $.ajax({
@@ -210,7 +235,6 @@ function update(url) {
       var prev_last = last;
       // Extract all the data by date
       // time_series -> [[timestamp, value]...]
-      var new_data = {};
       for (var i = 0; i < d.length; ++i) {
         var series = d[i];
         var name = series.target;
@@ -221,7 +245,8 @@ function update(url) {
         var points = series.datapoints;
         var ny = [];
         for (var pi = 0; pi < points.length; ++pi) {
-          var ts = points[pi][1];
+          // We round the points to the second.
+          var ts = Math.round(points[pi][1] / 1000000) * 1000000;
           var val = points[pi][0];
           var entry = [ts, val];
           if (ts > last) {
@@ -274,12 +299,12 @@ function update(url) {
       }
       var sorted_data_by_date = dictToArray(data_by_date, 'ts')
       rebuildGraphs(sorted_data_by_date, prev_last);
-      bye();
+      donecb();
     },
     error: function(e) {
       console.log("ERROR");
       console.log(e);
-      bye();
+      donecb();
     },
   });
 }
@@ -348,6 +373,8 @@ function processData(dataByDate) {
 dbg = null;
 // append_from in usec.
 function rebuildGraphs(data_by_date, append_from) {
+  // TODO: get rid of the data that is out of the view right away.
+  // garbageCollect();
   var data = processData(data_by_date);
   dbg = data;
   for (var gi in graphs) {
@@ -466,14 +493,13 @@ function setupUpdates(ms) {
         // constantly, and dont' overload the server.
         ms = 100
       }
-      timer = setTimeout(update, ms);
+      timer = setTimeout(autoUpdate, ms);
     }
   } else if (timer) {
     clearTimeout(timer);
     timer = null;
   }
 }
-
 
 function fetchOnMoveTimer() {
   if (fetchTimer) {
@@ -482,7 +508,7 @@ function fetchOnMoveTimer() {
   fetchTimer = setTimeout(function() {
     // TODO: check what data we already have here.
     if (opts.auto_fetch) {
-      loadFromZoom(false);
+      loadFromZoom();
     }
   }, 1000);
 }
@@ -511,17 +537,61 @@ function setDateWindow(left, right) {
     g.updateOptions({'dateWindow': [left, right]});
   }
   blockRedraw = false;
-  loadFromZoom(false);
+  loadFromZoom();
 }
 
+function garbageCollect() {
+  console.log("garbageCollect");
+  // 1. find the min and max bounds for every graph.
+  // 2. truncatethe data to those min/max.
+}
+
+// If we are looking at recent data (i.e. 'to' is within the last
+// minute)
+// - Load the last 60s at full resolution
+// - Load the last 12h at minute resolution
+// - Load the last 7d at hour resolution
+// - Load the rest at day resolution
+// Otherwise, load data based on the window width.
 // from and to are in milliseconds.
-function findGoodSummary(from, to, full_res) {
+function findGoodSummaries(from, to) {
+  from = Math.round(from);
+  to = Math.round(to);
+  var now = new Date().getTime();  // ms.
+  if (now - to > ms1m) {
+    // Not in the last 60 seconds.
+    return [bestResolutionForWidth(from, to)];
+  }
+  var urls = [];
+  // Last 60 seconds:
+  var last = Math.max(from, to - ms1m);
+  urls.push(pollUrl(last * 1000, to * 1000));
+  // Last 12h at minute resolution
+  if (from < last) {
+    var prevLast = last;
+    last = Math.max(from, to - 12*ms1h);
+    urls.push(pollUrl(last * 1000, prevLast * 1000, '60s'));
+  }
+  // Last 7d at hour resolution
+  if (from < last) {
+    var prevLast = last;
+    last = Math.max(from, to - 7*ms1d);
+    urls.push(pollUrl(last * 1000, prevLast * 1000, '3600s'));
+  }
+  // The rest at day resolution
+  if (from < last) {
+    urls.push(pollUrl(from * 1000, last * 1000, '86400s'));
+  }
+  return urls;
+}
+
+function bestResolutionForWidth(from, to) {
   var g = graphs[0].g;
   var pixels = g.getArea().w;
   var secs = (to - from) / 1000;
   var sec_per_pixel = Math.floor(secs / pixels);
   var url = "";
-  if (sec_per_pixel <= 1 || full_res) {
+  if (sec_per_pixel <= 1) {
     url = pollUrl(
         Math.floor(from * 1000),
         Math.floor(to * 1000));
@@ -534,12 +604,11 @@ function findGoodSummary(from, to, full_res) {
   return url;
 }
 
-function loadFromZoom(full_res) {
+function loadFromZoom() {
   var g = graphs[0].g;
   var range = g.xAxisRange();
-  var url = findGoodSummary(
-      range[0], range[1], full_res);
-  update(url);
+  var urls = findGoodSummaries(range[0], range[1]);
+  manualUpdate(urls);
 }
 
 function createChartEl() {
@@ -615,23 +684,20 @@ function setupDashboard() {
 }
 
 // from and to in milliseconds
-function loadDates(from, to, full_res) {
-  var url = findGoodSummary(from, to, full_res);
+function loadDates(from, to) {
   console.log(from, new Date(from));
   console.log(to, new Date(to));
-
   setDateWindow(from, to);
-  update(url);
+  manualUpdate(findGoodSummaries(from, to));
 }
 
 function finishSetup() {
   if (opts.from && opts.to) {
     loadDates(
         new Date(opts.from).getTime(),
-        new Date(opts.to).getTime(),
-        opts.full_res_preload);
+        new Date(opts.to).getTime());
   } else {
-    update();
+    autoUpdate();
   }
   toggleUpdates();
 }
@@ -659,10 +725,12 @@ function shareUrl() {
   return url;
 }
 
-function loading(isLoading) {
-  if (isLoading) {
+function loading(diff) {
+  loadingCount += diff;
+  if (loadingCount > 0) {
     $('#loading').show();
   } else {
+    loadingCount = 0;
     $('#loading').hide();
   }
 }
