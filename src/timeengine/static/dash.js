@@ -199,11 +199,17 @@ function pollUrl(from, to, summarize) {
 
 function autoUpdate() {
   timer = null;
-  // Every minute, refresh the zoom,
-  // TODO: only if following.
+  // Every minute, refresh the zoom. This should only run if
+  // opts.live_updates is true, so we can refresh safely.
   fullRefreshCount--;
   if (fullRefreshCount <= 0) {
-    loadFromZoom();
+    var range = getVisibleDateRange();
+    // We get rid of the first URL which is the most recent data
+    // since we most likely already have this data.
+    var urls = findGoodSummaries(range[0], range[1]).slice(1);
+    for (var i in urls) {
+      update(urls[i], function() {});
+    }
     fullRefreshCount = 60;
   }
   var start_update = new Date().getTime();
@@ -246,7 +252,7 @@ function update(url, donecb) {
         var ny = [];
         for (var pi = 0; pi < points.length; ++pi) {
           // We round the points to the second.
-          var ts = Math.round(points[pi][1] / 1000000) * 1000000;
+          var ts = Math.round(points[pi][1] / us1s) * us1s;
           var val = points[pi][0];
           var entry = [ts, val];
           if (ts > last) {
@@ -387,8 +393,7 @@ function rebuildGraphs(data_by_date, append_from) {
     };
     var win = g.xAxisRange();
     var win_to_last = win[1] * 1000 - (append_from);
-    var following = g.isZoomed('x') && win_to_last > -5000000;//< 1000 && win_to_last > -1000;
-    if (following) {
+    if (opts.live_updates) {
       if (win_to_last < 0) win_to_last = 0;
       // Move the window.
       var head = (last + win_to_last) / 1000;
@@ -499,6 +504,20 @@ function setupUpdates(ms) {
     clearTimeout(timer);
     timer = null;
   }
+  document.getElementById('ct-update').checked = opts.live_updates;
+}
+
+function checkLiveUpdatesWindow() {
+  if (opts.live_updates && !isFollowing()) {
+    // If we moved the window far enough away, then disable the
+    // live_updates.
+    console.log("Moved the window far from 'now', stopping live updates.");
+    opts.live_updates = false;
+    setupUpdates();
+  } else if (!opts.live_updates && isFollowing()) {
+    opts.live_updates = true;
+    setupUpdates();
+  }
 }
 
 function fetchOnMoveTimer() {
@@ -506,6 +525,7 @@ function fetchOnMoveTimer() {
     clearTimeout(fetchTimer);
   }
   fetchTimer = setTimeout(function() {
+    checkLiveUpdatesWindow();
     // TODO: check what data we already have here.
     if (opts.auto_fetch) {
       loadFromZoom();
@@ -604,9 +624,21 @@ function bestResolutionForWidth(from, to) {
   return url;
 }
 
-function loadFromZoom() {
+// Returned times [from, to] are in ms.
+function getVisibleDateRange() {
   var g = graphs[0].g;
-  var range = g.xAxisRange();
+  return g.xAxisRange();
+}
+
+function isFollowing() {
+  var win = getVisibleDateRange();  // ms.
+  var now = new Date().getTime();  // ms.
+  var win_to_last = win[1] - now;  // ms.
+  return g.isZoomed('x') && win_to_last > (-5 * ms1s);
+}
+
+function loadFromZoom() {
+  var range = getVisibleDateRange();
   var urls = findGoodSummaries(range[0], range[1]);
   manualUpdate(urls);
 }
@@ -645,7 +677,6 @@ function parseOpts() {
   }
   console.log(opts);
 
-  document.getElementById('ct-update').checked = opts.live_updates;
   setupUpdates();
   document.getElementById('ct-sync-graphs').checked = opts.sync_graphs;
   document.getElementById('ct-pull-on-pan').checked = opts.auto_fetch;
@@ -708,8 +739,7 @@ function shareView() {
 }
 
 function shareUrl() {
-  var g = graphs[0].g;
-  var range = g.xAxisRange();
+  var range = getVisibleDateRange();
   var from = new Date(range[0]).toISOString();
   var to = new Date(range[1]).toISOString();
   var url = '#' + opts.dashboard;
