@@ -388,7 +388,7 @@ function rebuildGraphs(data_by_date, append_from) {
     var g = obj.g;
 
     // Update the graph.
-    var opts = {
+    var graph_opts = {
       file: data[gi],
     };
     var win = g.xAxisRange();
@@ -397,10 +397,10 @@ function rebuildGraphs(data_by_date, append_from) {
       if (win_to_last < 0) win_to_last = 0;
       // Move the window.
       var head = (last + win_to_last) / 1000;
-      opts['dateWindow'] = [head - win[1] + win[0], head];
+      graph_opts['dateWindow'] = [head - win[1] + win[0], head];
     }
     blockRedraw = true;
-    g.updateOptions(opts);
+    g.updateOptions(graph_opts);
     blockRedraw = false;
   }
 }
@@ -521,6 +521,7 @@ function checkLiveUpdatesWindow() {
 }
 
 function fetchOnMoveTimer() {
+  checkLiveUpdatesWindow();
   if (fetchTimer) {
     clearTimeout(fetchTimer);
   }
@@ -558,6 +559,7 @@ function setDateWindow(left, right) {
   }
   blockRedraw = false;
   loadFromZoom();
+  checkLiveUpdatesWindow();
 }
 
 function garbageCollect() {
@@ -634,6 +636,7 @@ function isFollowing() {
   var win = getVisibleDateRange();  // ms.
   var now = new Date().getTime();  // ms.
   var win_to_last = win[1] - now;  // ms.
+  var g = graphs[0].g;
   return g.isZoomed('x') && win_to_last > (-5 * ms1s);
 }
 
