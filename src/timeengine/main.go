@@ -17,6 +17,7 @@ func init() {
 	http.HandleFunc("/dashboards", ui.Dashboards)
 	http.HandleFunc("/dashboard/edit", ui.DashboardEditor)
 	http.HandleFunc("/namespaces", ui.Namespaces)
+	http.HandleFunc("/push", ui.PushPage)
 
 	// Test page. Verifies that the user is logged in, and can send
 	// data. Mostly for use in shell scripts.

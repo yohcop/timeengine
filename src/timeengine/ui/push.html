@@ -1,0 +1,115 @@
+{{define "push-select"}}
+<html>
+<head>
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+  //google.load('visualization', '1', {packages: ['gauge']});
+  google.load('jquery', '1.7.0');
+</script>
+</head>
+<body>
+<h3>Select a namespace</h3>
+<table id="namespace-table">
+  <thead>
+    <tr>
+      <th>Namespace</th>
+    </tr>
+  </thead>
+  <tbody id="namespace-tbody"></tbody>
+</table>
+<script src="/static/api.js"></script>
+<script>
+function refreshNamespaceTable() {
+  listNamespaces(
+  	function(d) {
+      console.log(d);
+      var tb = document.createElement('tbody');
+      tb.id='namespace-tbody';
+      for (var i = 0; i < d.Namespaces.length; ++i) {
+        var ns = d.Namespaces[i];
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        var go = document.createElement('a');
+        go.href="/push?ns=" + ns.Name + "&nssecret=" + ns.Secret;
+        go.textContent = ns.Name;
+        td.appendChild(go);
+        tr.appendChild(td);
+        tb.appendChild(tr);
+      }
+      var table = document.getElementById('namespace-table');
+      table.replaceChild(
+        tb,
+        document.getElementById('namespace-tbody'));
+    },
+    function(d) {
+      console.log(d);
+      alert(d.responseText);
+    }
+  );
+}
+
+refreshNamespaceTable();
+</script>
+</body>
+</html>
+{{end}}
+
+{{define "push"}}
+<html>
+<head>
+<script>
+function put(raw_line){
+  function readystatechange() {
+    if(this.readyState === this.DONE) {
+      switch(this.status){
+        case 200:
+          console.log("Ok, sent " + raw_line);
+          document.querySelector("#last").innerHTML = raw_line;
+          return;
+        case 302:
+          console.log("Auth error");
+          return;
+        case 401:
+        default:
+      }
+    }
+  }
+
+  var parts = raw_line.split(' ');
+
+  var data = {
+    "ns": "{{.Namespace}}",
+    "nssecret": "{{.NsSecret}}",
+    "pts": [
+      {
+        "t": Math.floor(Number(parts[2]) * 1000000),
+        "vs": [
+          {
+            "m": parts[0],
+            "v": Number(parts[1]),
+          }
+        ]
+      }
+    ]
+  };
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = readystatechange;
+  xhr.open("POST", "/api/timeseries/put");
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(data && JSON.stringify(data));
+}
+
+var messageHandler = function(e) {
+  put(e.data);
+};
+
+window.addEventListener('message', messageHandler);
+</script>
+</head>
+<body>
+<div>Pushing in namespace <strong>{{.Namespace}}</strong>.</div>
+<div>Last data sent: <span id="last"></span></div>
+</body>
+</html>
+{{end}}

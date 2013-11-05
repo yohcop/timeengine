@@ -27,6 +27,12 @@ type dashboardTmplData struct {
 	Graphs string
 }
 
+type pushTmplData struct {
+	Tpl       rootTmplData
+	Namespace string
+	NsSecret  string
+}
+
 func Index(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)
 	if user == nil || err != nil {
@@ -99,4 +105,29 @@ func Namespaces(w http.ResponseWriter, r *http.Request) {
 		User:  user,
 		Login: users.LogoutURL(appengine.NewContext(r)),
 	})
+}
+
+func PushPage(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
+	if user == nil || err != nil {
+		return
+	}
+
+	if len(r.FormValue("ns")) == 0 {
+		rootTmpl.ExecuteTemplate(w, "push-select", &pushTmplData{
+			Tpl: rootTmplData{
+				User:  user,
+				Login: users.LogoutURL(appengine.NewContext(r)),
+			},
+		})
+	} else {
+		rootTmpl.ExecuteTemplate(w, "push", &pushTmplData{
+			Tpl: rootTmplData{
+				User:  user,
+				Login: users.LogoutURL(appengine.NewContext(r)),
+			},
+			Namespace: r.FormValue("ns"),
+			NsSecret:  r.FormValue("nssecret"),
+		})
+	}
 }
