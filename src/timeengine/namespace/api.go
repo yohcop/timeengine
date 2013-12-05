@@ -36,8 +36,14 @@ func NewNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	key := NsKey(c, ns)
+	var secret string
+	if ns == "test" {
+		secret = "test"
+	} else {
+		secret = randString(10)
+	}
 	namespace := &Ns{
-		S: randString(10),
+		S: secret,
 		D: false,
 	}
 	if _, err := datastore.Put(c, key, namespace); err != nil {

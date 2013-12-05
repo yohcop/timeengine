@@ -164,7 +164,7 @@ def pusher():
     # We may have no lines when the command is stopped.
     if len(lines) > 0:
       # Prepare data
-      print "sending", len(lines), "lines"
+      print "sending", len(lines), "lines (%d)" % queue.qsize()
       data = make_data(lines)
       # Send to backend
       send(data)
