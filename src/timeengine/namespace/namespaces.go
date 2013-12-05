@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"appengine"
 	"appengine/datastore"
@@ -45,7 +46,11 @@ func getNs(c appengine.Context, ns string) *Ns {
 	if item := getNsFromMemcache(c, ns); item != nil {
 		return item
 	}
-	return getNsFromDatastore(c, ns)
+	item := getNsFromDatastore(c, ns)
+	if item != nil {
+		putNsInMemcache(c, ns, item)
+	}
+	return item
 }
 
 func getNsFromMemcache(c appengine.Context, ns string) *Ns {
@@ -62,4 +67,14 @@ func getNsFromDatastore(c appengine.Context, ns string) *Ns {
 		return nil
 	}
 	return ts
+}
+
+func putNsInMemcache(c appengine.Context, ns string, obj *Ns) {
+	// Ignore any return value at this point. If setting the namespace
+	// object in memcache fails, whatever.
+	memcache.Gob.Set(c, &memcache.Item{
+		Key:        ns,
+		Object:     obj,
+		Expiration: time.Hour,
+	})
 }

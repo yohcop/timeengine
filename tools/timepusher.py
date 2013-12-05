@@ -128,27 +128,13 @@ def make_data(lines):
     metric = l[0]
     value = float(l[1])
     date = int(float(l[2]) * 1000 * 1000) # seconds to microseconds.
-    resolution = len(l) == 4 and int(l[4]) or 1
 
     val = {
         'm': metric,
         'v': value,
+        't': date,
     }
-
-    # If same timestamp and resolution as previous point, reuse it.
-    if last_pt and last_pt['t'] == date and last_pt['r'] == resolution:
-      last_pt['vs'].append(val)
-    else:
-      # Otherwise, we make a new one.
-      if last_pt:
-        pts.append(last_pt)
-      last_pt = {
-          'r': resolution,
-          't': date,
-          'vs': [val],
-      }
-  if last_pt:
-    pts.append(last_pt)
+    pts.append(val)
 
   data['pts'] = pts
   return data

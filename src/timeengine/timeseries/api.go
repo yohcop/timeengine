@@ -12,20 +12,17 @@ import (
 	"timeengine/users"
 
 	"appengine"
+	"appengine/delay"
 )
 
 var _ = log.Println
 
 // Put ===================================================
 
-type Vals struct {
+type Points struct {
+	T int64
 	M string
 	V float64
-}
-
-type Points struct {
-	T  int64
-	Vs []*Vals
 }
 
 type PutReq struct {
@@ -57,20 +54,28 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ps := make([]*points.P, 0)
-	for _, p := range req.Pts {
-		for _, v := range p.Vs {
-			p := points.NewP(v.V, p.T, namespace.MetricName(req.Ns, v.M))
-			ps = append(ps, p)
-		}
-	}
+	delayInputProcess.Call(c, &req)
 
-	err = points.PutRawPoints(&impl.Appengine{c}, ps)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
+
+func ProcessInput(c appengine.Context, req *PutReq) error {
+	ps := make([]*points.P, 0)
+	for _, p := range req.Pts {
+		p := points.NewP(p.V, p.T, namespace.MetricName(req.Ns, p.M))
+		ps = append(ps, p)
+	}
+
+	return points.PutRawPoints(&impl.Appengine{c}, ps)
+}
+
+// Warining: if the string is changed (name of the delay function),
+// pending operations will break when the new version is pushed to
+// appengine.
+var delayInputProcess = delay.Func("ProcessInput", ProcessInput)
 
 // Get =========================================================
 
