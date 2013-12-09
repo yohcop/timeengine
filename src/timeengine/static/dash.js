@@ -31,7 +31,6 @@ var graphs = [];
 // graphs.
 var all_targets = {};
 var timer = null;
-var fullRefreshCount = 60;
 var fetchTimer = null;
 var blockRedraw = false;
 var loadingCount = 0;  // number of in-flight requests.
@@ -199,19 +198,6 @@ function pollUrl(from, to, summarize) {
 
 function autoUpdate() {
   timer = null;
-  // Every minute, refresh the zoom. This should only run if
-  // opts.live_updates is true, so we can refresh safely.
-  fullRefreshCount--;
-  if (fullRefreshCount <= 0) {
-    var range = getVisibleDateRange();
-    // We get rid of the first URL which is the most recent data
-    // since we most likely already have this data.
-    var urls = findGoodSummaries(range[0], range[1]).slice(1);
-    for (var i in urls) {
-      update(urls[i], function() {});
-    }
-    fullRefreshCount = 60;
-  }
   var start_update = new Date().getTime();
   var url = pollUrl();
   update(url, function() {
@@ -236,8 +222,8 @@ function update(url, donecb) {
   }
   $.ajax({
     url: url,
-		dataType: 'jsonp',
-		success: function(d) {
+    dataType: 'jsonp',
+    success: function(d) {
       var prev_last = last;
       // Extract all the data by date
       // time_series -> [[timestamp, value]...]
@@ -286,6 +272,9 @@ function update(url, donecb) {
       // At this point, for target in all_targets have a data
       // array that is the sorted (by timestamp) list of points for that
       // metric.
+
+      // We can get rid of the data that is unimportant at this point.
+      garbageCollect();
 
       // Compute a mapping keyed by timestamp
       // (native format for dygraphs.)
@@ -379,8 +368,6 @@ function processData(dataByDate) {
 dbg = null;
 // append_from in usec.
 function rebuildGraphs(data_by_date, append_from) {
-  // TODO: get rid of the data that is out of the view right away.
-  // garbageCollect();
   var data = processData(data_by_date);
   dbg = data;
   for (var gi in graphs) {
@@ -563,48 +550,29 @@ function setDateWindow(left, right) {
 }
 
 function garbageCollect() {
-  console.log("garbageCollect");
-  // 1. find the min and max bounds for every graph.
-  // 2. truncatethe data to those min/max.
-}
+  var range = getVisibleDateRange();
+  // TODO: add margin around that for scrolling.
+  min = range[0] * 1000;
+  max = range[1] * 1000;
 
-// If we are looking at recent data (i.e. 'to' is within the last
-// minute)
-// - Load the last 60s at full resolution
-// - Load the last 12h at minute resolution
-// - Load the last 7d at hour resolution
-// - Load the rest at day resolution
-// Otherwise, load data based on the window width.
-// from and to are in milliseconds.
-function findGoodSummaries(from, to) {
-  from = Math.round(from);
-  to = Math.round(to);
-  var now = new Date().getTime();  // ms.
-  if (now - to > ms1m) {
-    // Not in the last 60 seconds.
-    return [bestResolutionForWidth(from, to)];
+  for (var target in all_targets) {
+    var obj = all_targets[target];
+    var data = obj.data;
+
+    var left = 0;
+    var right = data.length;
+    // TODO: we can be smarter that that, since the data aray is ordered and
+    // data[i][0] always increasing...
+    for (var i = 0; i < data.length; ++i) {
+      if (data[i][0] < min && left < i) {
+        left = i;
+      }
+      if (data[i][0] > max && i < right) {
+        right = i;
+      }
+    }
+    obj.data = data.slice(left, right+1);
   }
-  var urls = [];
-  // Last 60 seconds:
-  var last = Math.max(from, to - ms1m);
-  urls.push(pollUrl(last * 1000, to * 1000));
-  // Last 12h at minute resolution
-  if (from < last) {
-    var prevLast = last;
-    last = Math.max(from, to - 12*ms1h);
-    urls.push(pollUrl(last * 1000, prevLast * 1000, '60s'));
-  }
-  // Last 7d at hour resolution
-  if (from < last) {
-    var prevLast = last;
-    last = Math.max(from, to - 7*ms1d);
-    urls.push(pollUrl(last * 1000, prevLast * 1000, '3600s'));
-  }
-  // The rest at day resolution
-  if (from < last) {
-    urls.push(pollUrl(from * 1000, last * 1000, '86400s'));
-  }
-  return urls;
 }
 
 function bestResolutionForWidth(from, to) {
@@ -642,8 +610,7 @@ function isFollowing() {
 
 function loadFromZoom() {
   var range = getVisibleDateRange();
-  var urls = findGoodSummaries(range[0], range[1]);
-  manualUpdate(urls);
+  manualUpdate([bestResolutionForWidth(range[0], range[1])]);
 }
 
 function createChartEl() {
@@ -722,7 +689,7 @@ function loadDates(from, to) {
   console.log(from, new Date(from));
   console.log(to, new Date(to));
   setDateWindow(from, to);
-  manualUpdate(findGoodSummaries(from, to));
+  manualUpdate([bestResolutionForWidth(from, to)]);
 }
 
 function finishSetup() {
