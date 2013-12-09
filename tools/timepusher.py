@@ -176,9 +176,8 @@ def pusher():
 
     end_time = time.clock()
     to_sleep = (1.0/args.max_qps) - (end_time - start_time)
-    if to_sleep < 0:
-      to_sleep = 0
-    time.sleep(to_sleep)
+    if to_sleep > 0:
+      time.sleep(to_sleep)
 
 
 def read_from_stdin():
@@ -194,7 +193,11 @@ class SocketHandler(SocketServer.BaseRequestHandler):
     f = self.request.makefile()
     while True:
       line =  f.readline()
-      if line == 'quitquitquit\n' or not line:
+      if line == 'quitquitquit\n':
+        print 'Received quitquitquit'
+        self.server.shutdown()
+        break
+      if not line:
         break
       queue.put(line)
 
@@ -204,10 +207,13 @@ class ThreadedSocketHandler(SocketServer.ThreadingMixIn,
   pass
 
 
-def read_from_socket(port):
-  server = ThreadedSocketHandler(('', port), SocketHandler)
-  print "Listening on port", port
-  server.serve_forever()
+def read_from_socket():
+  server = ThreadedSocketHandler(('', args.port), SocketHandler)
+  print "Listening on port", args.port
+  try:
+    server.serve_forever()
+  except Exception, e:
+    print "ERROR:", e
 
 
 def main():
@@ -219,9 +225,15 @@ def main():
   t.start()
 
   if args.port:
-    read_from_socket(args.port)
+    t2 = threading.Thread(target=read_from_socket)
   else:
-    read_from_stdin()
+    t2 = threading.Thread(target=read_from_stdin)
+  t2.start()
+  try:
+    t2.join()
+  except:
+    pass
+  request_pool.terminate()
 
   # Stop the pusher thread.
   print "bye"
