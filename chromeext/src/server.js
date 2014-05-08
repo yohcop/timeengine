@@ -5,7 +5,9 @@ var log = (function(){
     if (str.length>0 && str.charAt(str.length-1)!='\n') {
       str+='\n'
     }
-    area.innerText=str+area.innerText;
+    var l = area.innerText.length;
+    var max = Math.min(1000, l);
+    area.innerText=str+area.innerText.slice(0, max);
     if (console) console.log(str);
   };
   return {output: output};

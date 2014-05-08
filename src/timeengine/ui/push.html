@@ -58,15 +58,17 @@ refreshNamespaceTable();
 <html>
 <head>
 <script>
-function put(raw_line){
+function put(raw_lines){
+  var lines = raw_lines.split(/[\n\r]+/);
+
   function readystatechange() {
     if(this.readyState === this.DONE) {
       switch(this.status){
         case 200:
-          console.log("Ok, sent " + raw_line);
-          document.querySelector("#last").innerHTML = raw_line;
+          document.querySelector("#last").innerHTML = lines[lines.length - 2];
           return;
         case 302:
+          document.querySelector("#last").innerHTML = "Auth error";
           console.log("Auth error");
           return;
         case 401:
@@ -75,23 +77,22 @@ function put(raw_line){
     }
   }
 
-  var parts = raw_line.split(' ');
-
   var data = {
     "ns": "{{.Namespace}}",
     "nssecret": "{{.NsSecret}}",
-    "pts": [
-      {
-        "t": Math.floor(Number(parts[2]) * 1000000),
-        "vs": [
-          {
-            "m": parts[0],
-            "v": Number(parts[1]),
-          }
-        ]
-      }
-    ]
+    "pts": []
   };
+
+  for (var i = 0; i < lines.length; ++i) {
+    var parts = lines[i].split(' ');
+    for (var j = 0; j < parts.length; ++j) {
+      data.pts.push({
+        "t": Math.floor(Number(parts[2]) * 1000000),
+        "m": parts[0],
+        "v": Number(parts[1]),
+      });
+    }
+  }
 
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = readystatechange;

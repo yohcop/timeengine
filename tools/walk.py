@@ -3,12 +3,18 @@
 A detailed description of walk.
 """
 
+import argparse
 import random
 import time
 import sys
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--metrics', default=3, type=int,
+                    help="Number of metrics per second to generate.")
+args = parser.parse_args(sys.argv[1:])
+
 pause=1
-num_metrics=3
+num_metrics=args.metrics
 max_out=24*60*60
 time_delta=-72*60*60
 live=True

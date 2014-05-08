@@ -47,14 +47,11 @@ var log = (function(){
 })();
 
 var put = (function(){
-    var rawLines = [];
     var frame = null;
 
     var send=function(raw) {
       if (frame) {
         frame.contentWindow.postMessage(raw, "*");
-      } else {
-        rawLines.push(raw);
       }
     };
 
@@ -69,20 +66,22 @@ function onAcceptCallback(tcpConnection, socketInfo) {
   log.output(info);
   console.log(socketInfo);
   tcpConnection.addDataReceivedListener(function(data) {
-    var lines = data.split(/[\n\r]+/);
-    for (var i=0; i<lines.length; i++) {
-      var line=lines[i];
-      if (line.length>0) {
-        var info="["+socketInfo.peerAddress+":"+socketInfo.peerPort+"] "+line;
-        log.output(info);
-
-        try {
-          put.send(line);
-        } catch (ex) {
-          log.output(ex);
-        }
-      }
+    try {
+      put.send(data);
+    } catch (ex) {
+      log.output(ex);
     }
+
+    var lines = data.split(/[\n\r]+/);
+    var info="["+socketInfo.peerAddress+":"+socketInfo.peerPort+"] ";
+    log.output(info + "got " + lines.length + " lines");
+    //for (var i=0; i<lines.length; i++) {
+    //  var line=lines[i];
+    //  if (line.length>0) {
+    //    var info="["+socketInfo.peerAddress+":"+socketInfo.peerPort+"] "+line;
+    //    log.output(info);
+    //  }
+    //}
   });
 };
 
