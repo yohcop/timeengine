@@ -46,7 +46,9 @@ func init() {
 	http.HandleFunc("/tasks/summarize60", timeseries.SummarizeCron)
 	http.HandleFunc(timeseries.SummarizeQueueUrl, timeseries.SummarizeTask)
 
-	http.HandleFunc(timeseries.UpdateSchemaMapUrl, timeseries.UpdateSchemaMap)
+	// There are no reason to make this available when we don't
+	// want to run the mapper.
+	// http.HandleFunc(timeseries.UpdateSchemaMapUrl, timeseries.UpdateSchemaMap)
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {
