@@ -664,6 +664,7 @@ function setupTestDashboard() {
 
 function setupDashboard() {
   document.getElementById('title').textContent = '#' + opts.dashboard;
+  document.getElementById('edit').href= '/dashboard/edit?dashboard=' + opts.dashboard;
   $.ajax({
     url: "/api/dashboard/get?dashboard=" + opts.dashboard,
   	dataType: 'json',

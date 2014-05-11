@@ -25,11 +25,21 @@ body{
   z-index:1000;
   padding:5px;
 }
-#title{
+.title{
   font-size: 38px;
   vertical-align: sub;
   float: left;
   padding-left: 4px;
+  text-decoration: none;
+}
+.title-f{
+  font-size: 20px;
+  float: left;
+}
+.title-f a{
+  color: #aaa;
+  text-decoration: none;
+  display: block;
 }
 #buttons {
   float:right;

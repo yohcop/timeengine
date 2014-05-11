@@ -18,6 +18,7 @@ func init() {
 	http.HandleFunc("/dashboard/edit", ui.DashboardEditor)
 	http.HandleFunc("/namespaces", ui.Namespaces)
 	http.HandleFunc("/push", ui.PushPage)
+	http.HandleFunc("/debug", ui.DebugPage)
 
 	// Test page. Verifies that the user is logged in, and can send
 	// data. Mostly for use in shell scripts.
@@ -38,12 +39,14 @@ func init() {
 
 	// Backward compatible with graphite:
 	// get a dashboard, and a tiny subset of the json renderer.
+	http.HandleFunc("/render", compat.Render)  // HU?
 	http.HandleFunc("/render/", compat.Render)
 
 	// Task and queues handlers
 	http.HandleFunc("/tasks/summarize60", timeseries.SummarizeCron)
-	http.HandleFunc(timeseries.SummarizeQueueUrl,
-      timeseries.SummarizeTask)
+	http.HandleFunc(timeseries.SummarizeQueueUrl, timeseries.SummarizeTask)
+
+	http.HandleFunc(timeseries.UpdateSchemaMapUrl, timeseries.UpdateSchemaMap)
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {

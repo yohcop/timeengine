@@ -131,3 +131,16 @@ func PushPage(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 }
+
+func DebugPage(w http.ResponseWriter, r *http.Request) {
+	user, err := users.AuthUser(w, r)
+	if user == nil || err != nil {
+		return
+	}
+
+	rootTmpl.ExecuteTemplate(w, "debug", &rootTmplData{
+		User:  user,
+		Login: users.LogoutURL(appengine.NewContext(r)),
+	})
+}
+

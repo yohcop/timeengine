@@ -1,0 +1,26 @@
+{{define "debug"}}
+{{template "header" .}}
+
+<div class="container">
+  <h2>Datastore queries</h2>
+  <form action="/render/" method="GET">
+    <fieldset>
+      <legend>Find datapoints</legend>
+      <label>Namespace*Metric</label>
+      <input type="text" class="input-xlarge" name="target"></input>
+
+      <label>After timestamp</label>
+      <input type="text" class="input-xlarge" id="from" name="from"></input>
+
+      <div>
+        <button type="submit" class="btn">Find</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+
+<script>
+document.getElementById('from').value = new Date().getTime() * 1000;
+</script>
+{{template "footer"}}
+{{end}}

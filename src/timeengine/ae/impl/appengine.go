@@ -34,6 +34,7 @@ func (ae *Appengine) DsGetBetweenKeys(kind, from, to string, limit int, els inte
 	}
 	if err != nil {
 		log.Println("--------", kind, from, to, limit, "==>", len(ks), err.Error())
+		ae.C.Errorf("Error fetching data: %s [%s, %s] %d (len=%d): %s", kind, from, to, limit, len(ks), err.Error())
 	}
 	return keys, err
 }

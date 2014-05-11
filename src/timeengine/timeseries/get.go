@@ -57,7 +57,7 @@ func GetData(c ae.Context, req *GetReq) (*GetResp, error) {
 		}
 	}
 
-	// Compute the outpug for each requested Serie, using the
+	// Compute the output for each requested Serie, using the
 	// data retrieved by the go routines.
 	for _, serie := range req.Serie {
 		k := encodeSerieDef(serie)
