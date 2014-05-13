@@ -141,6 +141,14 @@ function mkgraph(els, expressions, title, dygraphOpts) {
     title: title,
     width: opts.graph_width,
     height: opts.graph_height,
+    interactionModel: {
+      mousedown: downV3,
+      mousemove: moveV3,
+      mouseup: upV3,
+      click: clickV3,
+      dblclick: dblClickV3,
+      mousewheel: scrollV3,
+    },
   };
   $.extend(dygraphCfg, dygraphOpts);
   var g = new Dygraph(els.graph, [], dygraphCfg);
