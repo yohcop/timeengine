@@ -11,4 +11,5 @@ type Context interface {
 		keys []string, err error)
 	DeleteMulti(kind string, keys []string) error
 	AddTasks(queue, parh string, tasks []url.Values) error
+	Logf(fmt string, args ...interface{})
 }

@@ -67,3 +67,7 @@ func (ae *Appengine) AddTasks(queue, path string, tasks []url.Values) error {
 	_, err := taskqueue.AddMulti(ae.C, aeTasks, queue)
 	return err
 }
+
+func (ae *Appengine) Logf(fmt string, args ...interface{}) {
+  ae.C.Errorf(fmt, args...)
+}
