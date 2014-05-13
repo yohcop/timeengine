@@ -9,7 +9,7 @@ import (
 var _ = log.Println
 
 func GetPoints(c ae.Context, metric string, span *Span) ([]StatsDataPoint, error) {
-	if span.ss.USecs() == 0 || span.to.Ts()-span.from.Ts() <= 120*s {
+	if span.ss.USecs() == 0 || span.to.Ts()-span.from.Ts() <= AvailableSummarySizes[1].USecs() {
 		return getRawPoints(c, metric, span.from.Ts(), span.to.Ts())
 	}
 	return getFromSummaries(c, metric, span)

@@ -34,16 +34,26 @@ var InvalidSummarySize SummarySize = SummarySize(-1)
 var RawSummarySize SummarySize = SummarySize(0)
 var InvalidSummaryKey SummaryKey = SummaryKey(-1)
 
-// On 500px:
-// 1 year: 12h intervals.
-// 1 month: ~1.5h intervals.
-// 1 week: ~20 minutes intervals.
-// 1 day: ~2.5 minutes intervals.
+// On 500px (i.e. optimum, is fetching exactly 500 data points).
+// span      space between  Closest  Fetches
+//           points         summary
+// 1 year:   17h            4h       2190
+// 1 month:  ~1.5h          1h       744
+// 1 week:   ~20+ minutes   20min    504
+// 1 day:    ~2.5 minutes   1min     1440
+// 6 hours:  43 sec.        20sec    1080
+// 3 hours:  21 sec.        20sec    540
+// 1 hour:   7 sec.         5sec     720
 var AvailableSummarySizes = []SummarySize{
 	//      // =secs | per day
 	0,      // 0.001 | n/a - as many as pushed.
-	1 * m,  // 60    | 1440
-	1 * h,  // 3600  | 24
+	5  * s,
+	20 * s,
+	1  * m,  // 60    | 1440
+	5  * m,
+	20 * m,
+	1  * h,  // 3600  | 24
+	4  * h,
 	24 * h, // 86400 | 1
 }
 

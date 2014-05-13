@@ -56,8 +56,6 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 			tasks = append(tasks, v)
 		}
 		if len(metrics) >= maxBeforeFlush {
-			// 500 is the max. flush now.
-			// toRemove grows slightly faster since there are 3 summary sizes.
 			if err := addTasks(c, tasks, metrics, metricKeys, toRemove); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -90,6 +88,9 @@ func addTasks(c ae.Context,
 	return nil
 }
 
+// NOTE: these can't be done in separate tasks (i.e. separate tasks for each
+// summary size, for each time series). The reason being that a higher level
+// summary needs the data from a lower level summary already computed.
 func SummarizeTask(w http.ResponseWriter, r *http.Request) {
 	metricKey := r.FormValue("m")
 	_, summary, metric, err :=
@@ -100,8 +101,14 @@ func SummarizeTask(w http.ResponseWriter, r *http.Request) {
 
 	c := &impl.Appengine{appengine.NewContext(r)}
 	for _, res := range points.AvailableSummarySizes[1:] {
-		_, err := points.BuildSummaries(
-			c, metric, points.NewSpan(res, summary, summary))
+		var err error
+		if res.USecs() < oneMinute {
+			_, err = points.BuildSummaries(
+				c, metric, points.NewSpan(res, summary, summary+oneMinute-res.USecs()))
+		} else {
+			_, err = points.BuildSummaries(
+				c, metric, points.NewSpan(res, summary, summary))
+		}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

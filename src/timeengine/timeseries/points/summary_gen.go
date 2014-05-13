@@ -32,6 +32,9 @@ func BuildSummaries(c ae.Context, metric string, span *Span) ([]*summary, error)
 				relevantSummaries = append(relevantSummaries, finer)
 			}
 		}
+		if len(relevantSummaries) == 0 {
+			continue
+		}
 		// Now we have all the relevant higher-res summaries for the
 		// summary we are trying to build.
 		sk := span.ss.SummaryKey(at)
