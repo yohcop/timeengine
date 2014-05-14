@@ -59,6 +59,15 @@ body{
   position:fixed;
   right: 4px;
   bottom: 4px;
+  background-color:#ccc;
+  padding: 4px;
+  font-weight: bold;
+  color:#fff;
+}
+#error{
+  position:fixed;
+  right: 4px;
+  bottom: 4px;
   background-color:#c00;
   padding: 4px;
   font-weight: bold;

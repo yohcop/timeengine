@@ -304,9 +304,10 @@ function update(url, donecb) {
       rebuildGraphs(sorted_data_by_date, prev_last);
       donecb();
     },
-    error: function(e) {
+    error: function(e, txtStatus, errorThrown) {
       console.log("ERROR");
       console.log(e);
+      error(errorThrown);
       donecb();
     },
   });
@@ -742,6 +743,16 @@ function loading(diff) {
     loadingCount = 0;
     $('#loading').hide();
   }
+}
+
+function error(errorTxt) {
+  $('#error').textContent = errorTxt;
+  $('#error').show();
+  setTimeout(function() {
+    if ($('#error').textContent == errorTxt) {
+      $('#error').fadeOut('fast');
+    }
+  }, 1000);
 }
 
 function setDatesInSelector(range) {
