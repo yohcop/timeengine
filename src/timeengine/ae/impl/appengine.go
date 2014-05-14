@@ -1,8 +1,10 @@
 package impl
 
 import (
+	"encoding/hex"
 	"log"
-	"net/url"
+
+	"timeengine/ae"
 
 	"appengine"
 	"appengine/datastore"
@@ -59,15 +61,57 @@ func (ae *Appengine) DeleteMulti(kind string, keys []string) error {
 	return datastore.DeleteMulti(ae.C, ks)
 }
 
-func (ae *Appengine) AddTasks(queue, path string, tasks []url.Values) error {
+// Enqueues all the tasks.
+func (ae *Appengine) pushTasks(queue, path string, tasks []*ae.Task) error {
 	aeTasks := make([]*taskqueue.Task, len(tasks))
-	for i, values := range tasks {
-		aeTasks[i] = taskqueue.NewPOSTTask(path, values)
+	for i, task := range tasks {
+		aeTask := taskqueue.NewPOSTTask(path, task.Url)
+
+		if task.Name != nil {
+			// Make sure the name is valid..."
+			aeTask.Name = hex.EncodeToString([]byte(*task.Name))
+		}
+
+		if task.RunAfter != nil {
+			aeTask.Delay = *task.RunAfter
+		} else if task.RunAt != nil {
+			aeTask.ETA = *task.RunAt
+		}
+
+		aeTasks[i] = aeTask
 	}
 	_, err := taskqueue.AddMulti(ae.C, aeTasks, queue)
-	return err
+	// Ignore if the tasks were already added.
+	if multi, ok := err.(appengine.MultiError); err != nil && ok {
+	  // If one of the errors isn't ErrTaskAlreadyAdded, return all the errors.
+		for _, erri := range multi {
+			if erri != taskqueue.ErrTaskAlreadyAdded {
+				return err
+			}
+		}
+	} else if err != nil && !ok && err != taskqueue.ErrTaskAlreadyAdded {
+	  // If this is not a MultiError, and is not ErrTaskAlreadyAdded, return that error.
+		return err
+	}
+	return nil
+}
+
+func (ae *Appengine) AddTasks(queue, path string, tasks []*ae.Task) error {
+	// Push at max. 100 tasks at a time.
+	for len(tasks) > 0 {
+		max := 100
+		if max > len(tasks) {
+			max = len(tasks)
+		}
+		err := ae.pushTasks(queue, path, tasks[:max])
+		if err != nil {
+			return err
+		}
+		tasks = tasks[max:]
+	}
+	return nil
 }
 
 func (ae *Appengine) Logf(fmt string, args ...interface{}) {
-  ae.C.Errorf(fmt, args...)
+	ae.C.Errorf(fmt, args...)
 }

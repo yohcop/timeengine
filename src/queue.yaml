@@ -5,4 +5,4 @@ queue:
 - name: default
   rate: 100/s
 - name: map
-  rate: 10/s
+  rate: 100/s

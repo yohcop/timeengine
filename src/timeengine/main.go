@@ -48,7 +48,7 @@ func init() {
 
 	// There are no reason to make this available when we don't
 	// want to run the mapper.
-	// http.HandleFunc(timeseries.UpdateSchemaMapUrl, timeseries.UpdateSchemaMap)
+	http.HandleFunc(MapperUrl, Mapper)
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {

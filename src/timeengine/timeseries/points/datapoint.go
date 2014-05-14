@@ -60,7 +60,7 @@ func decodeKey(k string) (m string, t int64, err error) {
 		t, _ = strconv.ParseInt(parts[1], 10, 64)
 		return m, t, nil
 	}
-	return "", 0, errors.New("Bad key")
+	return "", 0, errors.New("Bad key:" + k)
 }
 
 func decodePointStrKey(k string, p *P) {

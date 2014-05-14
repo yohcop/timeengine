@@ -32,7 +32,7 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 	// Get the top ones. Since they are sorted by when they were
 	// inserted, we get the oldest ones.
 	keys, err := c.DsGetBetweenKeys(
-		points.MetricUpdateDatastoreType, "", to, 1000, &objs)
+		points.MetricUpdateDatastoreType, "", to, 5000, &objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -42,7 +42,7 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 	metrics := make([]*points.Metric, 0, len(keys))
 	metricKeys := make([]string, 0, maxBeforeFlush)
 	toRemove := make([]string, 0, maxBeforeFlush)
-	tasks := make([]url.Values, 0, maxBeforeFlush)
+	tasks := make([]*ae.Task, 0, maxBeforeFlush)
 	for _, k := range keys {
 		if _, _, metric, err := points.MetricUpdateKeyDecode(k); err == nil {
 			// The points.Metric is basically empty. all is contained in the key.
@@ -53,7 +53,7 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 			toRemove = append(toRemove, k)
 			v := url.Values{}
 			v.Set("m", k)
-			tasks = append(tasks, v)
+			tasks = append(tasks, &ae.Task{Url:v})
 		}
 		if len(metrics) >= maxBeforeFlush {
 			if err := addTasks(c, tasks, metrics, metricKeys, toRemove); err != nil {
@@ -63,7 +63,7 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 			metrics = make([]*points.Metric, 0, maxBeforeFlush)
 			metricKeys = make([]string, 0, maxBeforeFlush)
 			toRemove = make([]string, 0, maxBeforeFlush)
-			tasks = make([]url.Values, 0, maxBeforeFlush)
+			tasks = make([]*ae.Task, 0, maxBeforeFlush)
 		}
 	}
 	if len(tasks) > 0 {
@@ -74,7 +74,7 @@ func SummarizeCron(w http.ResponseWriter, r *http.Request) {
 }
 
 func addTasks(c ae.Context,
-	tasks []url.Values, metrics []*points.Metric,
+	tasks []*ae.Task, metrics []*points.Metric,
 	metricKeys, toRemove []string) error {
 	if err := c.AddTasks("summary", SummarizeQueueUrl, tasks); err != nil {
 		return err
@@ -97,6 +97,7 @@ func SummarizeTask(w http.ResponseWriter, r *http.Request) {
 		points.MetricUpdateKeyDecode(metricKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	c := &impl.Appengine{appengine.NewContext(r)}
@@ -111,6 +112,7 @@ func SummarizeTask(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 }
