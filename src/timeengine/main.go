@@ -43,11 +43,7 @@ func init() {
 	http.HandleFunc("/render/", compat.Render)
 
 	// Task and queues handlers
-	http.HandleFunc("/tasks/summarize60", timeseries.SummarizeCron)
 	http.HandleFunc(timeseries.SummarizeQueueUrl, timeseries.SummarizeTask)
-
-	// There are no reason to make this available when we don't
-	// want to run the mapper.
 	http.HandleFunc(MapperUrl, Mapper)
 }
 
