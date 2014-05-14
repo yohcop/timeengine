@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"timeengine/ae"
-	//"strconv"
 	"net/url"
 )
 
@@ -26,14 +25,16 @@ func PutRawPoints(c ae.Context, pts []*P) error {
 		keys = append(keys, keyAt(p.m, p.t))
 	}
 
+	// This will be retried if we return an error.
+	if err := c.PutMulti(pointDatastoreType, keys, pts); err != nil {
+		c.Logf("Error saving datapoints: %s", err.Error())
+		return err
+	}
 	if err := QueueSummaries(c, pts); err != nil {
 		c.Logf("Error queuing summaries: %s", err.Error())
-		// This will be retried if we return an error here.
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
-
-	return c.PutMulti(pointDatastoreType, keys, pts)
+	return nil
 }
 
 func QueueSummaries(c ae.Context, pts []*P) error {
