@@ -83,14 +83,15 @@ func (ae *Appengine) pushTasks(queue, path string, tasks []*ae.Task) error {
 	_, err := taskqueue.AddMulti(ae.C, aeTasks, queue)
 	// Ignore if the tasks were already added.
 	if multi, ok := err.(appengine.MultiError); err != nil && ok {
-	  // If one of the errors isn't ErrTaskAlreadyAdded, return all the errors.
+		// If one of the errors isn't ErrTaskAlreadyAdded, return all the errors.
 		for _, erri := range multi {
-			if erri != taskqueue.ErrTaskAlreadyAdded {
+			if erri != taskqueue.ErrTaskAlreadyAdded && erri != nil {
+				ae.Logf("Error adding to task queue: %s", erri.Error())
 				return err
 			}
 		}
 	} else if err != nil && !ok && err != taskqueue.ErrTaskAlreadyAdded {
-	  // If this is not a MultiError, and is not ErrTaskAlreadyAdded, return that error.
+		// If this is not a MultiError, and is not ErrTaskAlreadyAdded, return that error.
 		return err
 	}
 	return nil
@@ -105,6 +106,7 @@ func (ae *Appengine) AddTasks(queue, path string, tasks []*ae.Task) error {
 		}
 		err := ae.pushTasks(queue, path, tasks[:max])
 		if err != nil {
+			ae.Logf("Error adding tasks: %s", err.Error())
 			return err
 		}
 		tasks = tasks[max:]

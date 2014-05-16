@@ -11,13 +11,25 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--metrics', default=3, type=int,
                     help="Number of metrics per second to generate.")
+parser.add_argument('--start', default=time.time(), type=float,
+                    help="Start timestamp.")
+parser.add_argument('--stop', default=time.time() + 24*60*60, type=float,
+                    help="End timestamp.")
+parser.add_argument('--step', default=1, type=float,
+                    help="Time step, used when --live is false.")
+parser.add_argument('--pause', default=1, type=float,
+                    help="Pause in seconds between metric generation")
+parser.add_argument('--live', default=1, type=int,
+                    help="If true, then --start is ignored, and current time "
+                    "is used instead")
+
 args = parser.parse_args(sys.argv[1:])
 
-pause=1
+pause=args.pause
 num_metrics=args.metrics
-max_out=24*60*60
-time_delta=-72*60*60
-live=True
+time_start=args.start
+time_end=args.stop
+live=args.live
 
 def walk(n):
   return n + random.random() - 0.5
@@ -25,18 +37,18 @@ def walk(n):
 
 # Main =============================
 vals=[0] * num_metrics
-time_start=int(time.time())+time_delta
-while max_out > 0:
+while time_end > time_start:
   for i, v in enumerate(vals):
     if live:
       d=int(time.time())
     else:
       d=time_start
-    vals[i] = walk(v)
     print "my.metric.%d %f %f" % (i, vals[i], d)
-    sys.stdout.flush()
+    vals[i] = walk(v)
 
-  time_start+=1
-  if max_out > 0:
-    max_out -= 1
-    time.sleep(pause)
+  sys.stdout.flush()
+
+  if not live:
+    time_start += args.step
+
+  time.sleep(pause)

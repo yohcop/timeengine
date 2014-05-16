@@ -1,6 +1,8 @@
 package points
 
 import (
+	"errors"
+	"fmt"
 	"log"
 
 	"timeengine/ae"
@@ -33,7 +35,12 @@ func BuildSummaries(c ae.Context, metric string, span *Span) ([]*summary, error)
 			}
 		}
 		if len(relevantSummaries) == 0 {
-			continue
+			errStr := fmt.Sprintf("No relevant summaries for %s, "+
+				"start=%d end=%d step=%d at=%d [got %d summaries]",
+				metric, start, end, step, at, len(finerSummaries))
+			c.Logf(errStr)
+			// try again later.
+			return nil, errors.New(errStr)
 		}
 		// Now we have all the relevant higher-res summaries for the
 		// summary we are trying to build.

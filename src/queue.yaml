@@ -1,7 +1,7 @@
 
 queue:
 - name: summary
-  rate: 100/s
+  rate: 500/s
 - name: default
   rate: 100/s
 - name: map

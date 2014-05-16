@@ -135,7 +135,7 @@ func (r SummarySize) higherRes() SummarySize {
 	return AvailableSummarySizes[0]
 }
 
-func (r SummarySize) lowerRes() SummarySize {
+func (r SummarySize) LowerRes() SummarySize {
 	var l = len(AvailableSummarySizes) - 1
 	if r == AvailableSummarySizes[l] {
 		return r
@@ -152,7 +152,7 @@ func (r SummarySize) numPoints() int {
 	if r <= 1 {
 		return 0
 	}
-	lower := r.lowerRes()
+	lower := r.LowerRes()
 	return int(r / lower)
 }
 

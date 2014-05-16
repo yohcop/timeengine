@@ -15,15 +15,21 @@ import (
 func BackfilSummaries(w http.ResponseWriter, r *http.Request, path, function string) {
 	c := &impl.Appengine{appengine.NewContext(r)}
 	n := 5000
-	key := r.FormValue("m")
-	pts := make([]*P, 0)
+	from := r.FormValue("from")
+	to := r.FormValue("to")
+	continue_tasks := r.FormValue("continue")
 
 	// Fetch points.
-	keys, err := c.DsGetBetweenKeys("P", key, "", n, &pts)
+	pts := make([]*P, 0)
+	keys, err := c.DsGetBetweenKeys("P", from, to, n, &pts)
 	// Accept the old datapoints. (datastructure doesn't match anymore)
 	if _, ok := err.(*datastore.ErrFieldMismatch); err != nil && !ok {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	for i, p := range pts {
+		decodePointStrKey(keys[i], p)
 	}
 
 	if err = QueueSummaries(c, pts); err != nil {
@@ -31,17 +37,27 @@ func BackfilSummaries(w http.ResponseWriter, r *http.Request, path, function str
 		return
 	}
 
+	if len(keys) == 0 {
+		w.Write([]byte("No keys returned"))
+		return
+	}
+
 	v := url.Values{}
-	v.Set("m", keys[len(keys)-1])
+	v.Set("from", keys[len(keys)-1])
+	v.Set("to", to)
 	v.Set("f", function)
+	v.Set("continue", continue_tasks)
 	task := &ae.Task{Url: v}
 
-	continue_tasks := r.FormValue("c")
-	if continue_tasks != "no" && len(keys) > 1 {
+	if continue_tasks == "yes" && len(keys) > 1 {
 		err = c.AddTasks("map", path, []*ae.Task{task})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+	} else {
+		for _, p := range pts {
+		  w.Write([]byte(p.Key() + "\n"))
 		}
 	}
 

@@ -3,24 +3,85 @@
 
 <div class="container">
   <h2>Datastore queries</h2>
-  <form action="/render/" method="GET">
+  <form action="/render/" method="GET" target="form_results" class="form-horizontal">
     <fieldset>
       <legend>Find datapoints</legend>
-      <label>Namespace*Metric</label>
-      <input type="text" class="input-xlarge" name="target"></input>
+      <div class="control-group">
+        <label class="control-label">Name</label>
+        <div class="controls">
+          <input type="text" class="input-xxlarge" name="target" placeholder="namespace*metric"></input>
+          <div class="muted">Also possible: summarize(namespace*metric, "336s", "avg")</div>
+          <div class="muted">Summaries: 5s, 20s, 60s, 300s, 1200s, 3600s, 14400s, 86400s</div>
+        </div>
+      </div>
 
-      <label>After timestamp</label>
-      <input type="text" class="input-xlarge" id="from" name="from"></input>
+      <div class="control-group">
+        <label class="control-label">After timestamp</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" id="from" name="from"></input>
+          <div class="muted">30 minutes ago is the initial value (on refresh)</div>
+        </div>
+      </div>
 
-      <div>
-        <button type="submit" class="btn">Find</button>
+      <div class="control-group">
+        <label class="control-label">Before timestamp</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" id="until" name="until"></input>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="controls">
+          <button type="submit" class="btn">Find</button>
+        </div>
       </div>
     </fieldset>
   </form>
+
+  <h2>Actions</h2>
+  <form action="/tasks/map" method="GET" target="form_results" class="form-horizontal">
+    <fieldset>
+      <legend>Recompute summaries</legend>
+      <div class="control-group">
+        <label class="control-label">From</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" name="from"></input>
+          <div class="muted">Reminder: "!" is  the first ascii readable character, "~" the latest. Use that wisely.</div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">To</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" name="to"></input>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Continue</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" name="continue" value="no"></input>
+          <div class="muted">Changing that may lead to a lot of computation being made for a long time!</div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="controls">
+          <button type="submit" class="btn">Go</button>
+        </div>
+      </div>
+
+      <input type="hidden" name="f" value="backfillSummaries"></input>
+    </fieldset>
+  </form>
+
 </div>
 
+<iframe name="form_results" style="width:100%;height:100%"></iframe>
 <script>
-document.getElementById('from').value = new Date().getTime() * 1000;
+var thirtyMinutes = 30*60*1000;
+document.getElementById('from').value = new Date().getTime() * 1000 - thirtyMinutes;
+document.getElementById('until').value = new Date().getTime() * 1000;
 </script>
 {{template "footer"}}
 {{end}}
