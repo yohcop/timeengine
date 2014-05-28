@@ -57,7 +57,7 @@ func SummarizeTask(w http.ResponseWriter, r *http.Request) {
 	v.Set("ss", fmt.Sprint(nextSs))
 
 	updateKey := points.MetricUpdateKey(ts, metric, nextSs)
-	runAfter := time.Duration(70 * time.Second)
+	runAfter := time.Duration(130 * time.Second)
 	task := &ae.Task{
 		Url:      v,
 		Name:     &updateKey,

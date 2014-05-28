@@ -307,7 +307,7 @@ function update(url, donecb) {
     error: function(e, txtStatus, errorThrown) {
       console.log("ERROR");
       console.log(e);
-      error(errorThrown);
+      error('' + e.statusCode() + ': ' + e.statusText);
       donecb();
     },
   });
@@ -749,9 +749,7 @@ function error(errorTxt) {
   $('#error').textContent = errorTxt;
   $('#error').show();
   setTimeout(function() {
-    if ($('#error').textContent == errorTxt) {
-      $('#error').fadeOut('fast');
-    }
+    $('#error').fadeOut('fast');
   }, 1000);
 }
 
