@@ -8,8 +8,9 @@ type Ns struct {
 	name string
 
 	// Secret key, needed to send values to this time series.
-	// It's not really a secret, it's mostly just to avoid poluting
-	// another namespace unintentionally.
+	// It's not really a secret, it's mostly just to avoid polluting
+	// another namespace unintentionally with a typo (e.g. pushing data
+	// to my.namespace.268 instead of the intended my.namespace.288).
 	// Must stay immutable.
 	S string
 

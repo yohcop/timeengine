@@ -1,20 +1,16 @@
 package namespace
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
-	"math/rand"
 	"net/http"
-	"time"
 
 	"timeengine/users"
 
 	"appengine"
 	"appengine/datastore"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 func NewNamespace(w http.ResponseWriter, r *http.Request) {
 	user, err := users.AuthUser(w, r)
@@ -40,7 +36,12 @@ func NewNamespace(w http.ResponseWriter, r *http.Request) {
 	if ns == "test" {
 		secret = "test"
 	} else {
-		secret = randString(10)
+		secret, err = randString(10)
+		if err != nil {
+			http.Error(w, err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
 	}
 	namespace := &Ns{
 		S: secret,
@@ -92,11 +93,10 @@ func ListNamespaces(w http.ResponseWriter, r *http.Request) {
 	w.Write(s)
 }
 
-func randString(n int) string {
-	const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
+func randString(n int) (string, error) {
 	var bytes = make([]byte, n)
-	for i := range bytes {
-		bytes[i] = alphabet[rand.Intn(len(alphabet))]
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
 	}
-	return string(bytes)
+	return base64.StdEncoding.EncodeToString(bytes), nil
 }

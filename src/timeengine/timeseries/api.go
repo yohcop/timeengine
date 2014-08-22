@@ -51,6 +51,9 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 	if !namespace.VerifyNamespace(c, req.Ns, req.NsSecret) {
 		http.Error(w, "Missing or unknown namespace/secret",
 			http.StatusUnauthorized)
+
+		c.Errorf("Missing or unknown namespace/secret: %s, %s",
+			req.Ns, req.NsSecret)
 		return
 	}
 

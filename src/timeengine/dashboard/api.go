@@ -94,6 +94,9 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := &DashboardListResp{}
 	for i, dash := range dashs {
+		if authorized, err := dash.IsAcled(user.Email); err != nil || !authorized {
+			continue
+		}
 		dashresp := &DashboardResp{
 			Name: keys[i].StringID(),
 		}
@@ -133,6 +136,15 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(dashboard.G, &obj)
 	if err != nil {
 		http.Error(w, "Error parsing dashboard config", http.StatusInternalServerError)
+		return
+	}
+
+	if authorized, err := dashboard.IsAcled(user.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if !authorized {
+		http.Error(w, "Not authorized to edit this dashboard.",
+			http.StatusUnauthorized)
 		return
 	}
 
