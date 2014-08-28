@@ -133,6 +133,9 @@ def make_data(lines):
 
 
 def pusher(api, request_pool, stop_pusher):
+  def _send(d):
+    api.send(d)
+
   def _pusher():
     req_number = 0
     while True:
@@ -166,7 +169,7 @@ def pusher(api, request_pool, stop_pusher):
             print data
           req_number = 0
         # Send to backend
-        request_pool.apply_async(api.send, [api, data])
+        request_pool.apply_async(_send, [data])
         #api.send(data)
 
       # Check if we should still run.
