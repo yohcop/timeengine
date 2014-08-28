@@ -4,34 +4,45 @@ https://developers.google.com/api-client-library/python/guide/aaa_oauth
 """
 
 import argparse
+import httplib2
 import json
 import Queue
+import select
+import signal
 import SocketServer
 import sys
 import threading
 import time
-import httplib2
+from multiprocessing import pool
 
 from oauth2client.file import Storage
 from oauth2client.client import flow_from_clientsecrets, SignedJwtAssertionCredentials
 from apiclient.discovery import build
 
 parser = argparse.ArgumentParser()
+
+# Flags for app
 parser.add_argument('--namespace', '--ns',
                     required=True, help='namespace')
 parser.add_argument('--secret',
-                    required=True, help="Namespace's secret")
+                    required=True, help='Namespace secret')
 parser.add_argument('--port', default=0, type=int,
-                    help="If non 0, starts a server on that port "
-                    "listening for input. Otherwise, reads from stdin.")
-parser.add_argument('--max_qps', default=1, type=float,
-                    help="Maximum number of request per second to "
-                         "send to the server.")
+                    help='If non 0, starts a server on that port '
+                    'listening for input. Otherwise, reads from stdin.')
 parser.add_argument('--server', default='http://localhost:8080',
                     help='URL for the server. Starts with http[s]://')
+
+# Flags controlling how the data is sent (and how fast)
+parser.add_argument('--max_qps', default=1, type=float,
+                    help='Maximum number of request per second to '
+                    'send to the server.')
+parser.add_argument('--max_async_requests', default=10, type=int,
+                    help='Maximum number of concurrent requests.')
 parser.add_argument('--max_push_size', default=200, type=int,
                     help='Maximum number of datapoints to send to '
                     'the server in a single request.')
+
+# Flags for authentication.
 parser.add_argument('--service_account',
                     help='Service account credentials')
 parser.add_argument('--service_account_key',
@@ -39,26 +50,32 @@ parser.add_argument('--service_account_key',
 parser.add_argument('--client_secret',
                     help='When not using a service account, path to the client '
                     'secret json file.')
+
+# Flags for logging and debugging.
+parser.add_argument('--log_every', default=100, type=int,
+                    help='Prints debug information every N requests sent. -1 to '
+                    'disable.')
+parser.add_argument('--print_full_req', default=False, type=bool,
+                    help='Prints the full request to be sent to the server on '
+                    'log_every requests')
+
 args = parser.parse_args(sys.argv[1:])
-
-
 queue = Queue.Queue()
-stop_pusher = threading.Event()
 
 
 class EndpointApi(object):
   def __init__(self, http):
     self.http = http
-    self.service = build("timeengine", "v1",
-        discoveryServiceUrl=("https://loonoscope.appspot.com/_ah/api/discovery/v1/"
-                             "apis/{api}/{apiVersion}/rest"),
+    self.service = build('timeengine', 'v1',
+        discoveryServiceUrl=('https://loonoscope.appspot.com/_ah/api/discovery/v1/'
+                             'apis/{api}/{apiVersion}/rest'),
         http=http)
 
   def auth_service_account(self):
     credentials = SignedJwtAssertionCredentials(
             service_account_name=args.service_account,
             private_key=open(args.service_account_key).read(),
-            scope="https://www.googleapis.com/auth/userinfo.email")
+            scope='https://www.googleapis.com/auth/userinfo.email')
     credentials.authorize(self.http)
 
   def auth_user(self):
@@ -76,7 +93,7 @@ class EndpointApi(object):
 
       print 'Please go to:'
       print auth_uri
-      code = raw_input("Type in the code you got after authorizing the app: ")
+      code = raw_input('Type in the code you got after authorizing the app: ')
 
       credentials = flow.step2_exchange(code)
       storage.put(credentials)
@@ -84,10 +101,8 @@ class EndpointApi(object):
     credentials.authorize(self.http)
 
   def send(self, obj):
-    print obj
     try:
       result = self.service.put(body=obj).execute()
-      print result
     except Exception as e:
       print sys.exc_info()[0]
       print e
@@ -117,8 +132,9 @@ def make_data(lines):
   return data
 
 
-def pusher(api):
+def pusher(api, request_pool, stop_pusher):
   def _pusher():
+    req_number = 0
     while True:
       start_time = time.clock()
       # Empty the queue.
@@ -142,14 +158,19 @@ def pusher(api):
       # We may have no lines when the command is stopped.
       if len(lines) > 0:
         # Prepare data
-        print "sending", len(lines), "lines (%d)" % queue.qsize()
         data = make_data(lines)
+        req_number += 1
+        if req_number == args.log_every:
+          print time.time(), 'sending', len(lines), 'lines (queue=%d) starting with: ' % queue.qsize(), ' '.join(lines[0])
+          if args.print_full_req:
+            print data
+          req_number = 0
         # Send to backend
-        api.send(data)
+        request_pool.apply_async(api.send, [api, data])
+        #api.send(data)
 
       # Check if we should still run.
       if stop_pusher.is_set() and queue.empty():
-        print "bye thread"
         return
 
       end_time = time.clock()
@@ -159,12 +180,18 @@ def pusher(api):
   return _pusher
 
 
-def read_from_stdin():
-  while True:
-    line = sys.stdin.readline()
-    if line == 'quitquitquit\n':
-      break
-    queue.put(line)
+def read_from_stdin(stop_reader):
+  def _read_from_stdin():
+    print 'Reading from stdin'
+    while not stop_reader.is_set():
+      readable, _, _ = select.select([sys.stdin], [], [], 1)
+      if readable:
+        line = readable[0].readline()
+        if line == 'quitquitquit\n':
+          return
+        if line:
+          queue.put(line)
+  return _read_from_stdin
 
 
 class SocketHandler(SocketServer.BaseRequestHandler):
@@ -186,39 +213,55 @@ class ThreadedSocketHandler(SocketServer.ThreadingMixIn,
   pass
 
 
-def read_from_socket():
-  server = ThreadedSocketHandler(('', args.port), SocketHandler)
-  print "Listening on port", args.port
-  try:
-    server.serve_forever()
-  except Exception, e:
-    print "ERROR:", e
+def read_from_socket(server):
+  def _read_from_socket():
+    print 'Listening on port', args.port
+    try:
+      server.serve_forever()
+    except Exception, e:
+      print 'ERROR:', e
+  return _read_from_socket
 
 
 def main():
   http = httplib2.Http()
   api = EndpointApi(http)
+  print 'Authenticating...'
   if args.service_account:
     api.auth_service_account()
   else:
     api.auth_user()
+  print 'Ok.'
 
-  t = threading.Thread(target=pusher(api))
+  request_pool = pool.ThreadPool(args.max_async_requests)
+  stop_pusher = threading.Event()
+  t = threading.Thread(target=pusher(api, request_pool, stop_pusher))
   t.start()
 
   if args.port:
-    t2 = threading.Thread(target=read_from_socket)
+    server = ThreadedSocketHandler(('', args.port), SocketHandler)
+    t2 = threading.Thread(target=read_from_socket(server))
+    def signal_handler(signum, frame):
+      server.shutdown()
+    signal.signal(signal.SIGINT, signal_handler)
   else:
-    t2 = threading.Thread(target=read_from_stdin)
+    stop_reader = threading.Event()
+    t2 = threading.Thread(target=read_from_stdin(stop_reader))
+    def signal_handler(signum, frame):
+      stop_reader.set()
+    signal.signal(signal.SIGINT, signal_handler)
+
   t2.start()
   try:
-    t2.join()
+    while t2.is_alive():
+      t2.join(10000)
   except:
     pass
 
   # Stop the pusher thread.
-  print "bye"
   stop_pusher.set()
+  request_pool.terminate()
+
 
 if __name__ == '__main__':
   main()
