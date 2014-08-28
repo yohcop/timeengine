@@ -24,22 +24,31 @@ func LogoutURL(c appengine.Context) string {
 	return url
 }
 
-func AuthUser(w http.ResponseWriter, r *http.Request) (*User, error) {
+func IsAuthorized(r *http.Request) (bool, *User, error) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
-	if u == nil {
-		url, err := user.LoginURL(c, r.URL.String())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return nil, err
-		}
-		w.Header().Set("Location", url)
-		w.WriteHeader(http.StatusFound)
-		return nil, nil
-	}
-	return FindOrNewUser(u, r)
+	return IsUserAuthorized(r, u)
 }
 
+func IsUserAuthorized(r *http.Request, u *user.User) (bool, *User, error) {
+	if u == nil {
+		return false, nil, nil
+	}
+	// Admins are always authorized.
+	if u.Admin {
+		user, err := FindOrNewUser(u, r)
+		return true, user, err
+	}
+	c := appengine.NewContext(r)
+	user, err := FindUser(c, u.Email)
+	if err != nil || user == nil {
+		return false, nil, err
+	}
+	return true, user, nil
+}
+
+// TODO: change r to appengine.Context. A lot of appengine.Context are created
+// everywhere in here, it's not necessary.
 func FindOrNewUser(appengineUser *user.User, r *http.Request) (*User, error) {
 	c := appengine.NewContext(r)
 

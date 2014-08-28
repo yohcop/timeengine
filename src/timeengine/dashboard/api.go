@@ -14,8 +14,7 @@ import (
 var _ = log.Println
 
 func NewDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	if ok, _, _ := users.IsAuthorized(r); !ok {
 		return
 	}
 
@@ -79,8 +78,8 @@ type DashboardListResp struct {
 }
 
 func ListDashboards(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -113,8 +112,8 @@ func ListDashboards(w http.ResponseWriter, r *http.Request) {
 // GetDashboard ==================================================
 
 func GetDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -155,8 +154,8 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 // Save dashboard ================================================
 
 func SaveDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -216,8 +215,8 @@ func SaveDashboard(w http.ResponseWriter, r *http.Request) {
 // Delete dashboard =======================================
 
 func DeleteDashboard(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 

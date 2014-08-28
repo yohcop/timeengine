@@ -9,6 +9,8 @@ import (
 	"timeengine/timeseries"
 	"timeengine/ui"
 	"timeengine/users"
+
+	"third_party/go-endpoints/endpoints"
 )
 
 func init() {
@@ -17,6 +19,7 @@ func init() {
 	http.HandleFunc("/dashboards", ui.Dashboards)
 	http.HandleFunc("/dashboard/edit", ui.DashboardEditor)
 	http.HandleFunc("/namespaces", ui.Namespaces)
+	http.HandleFunc("/users", ui.Users)
 	http.HandleFunc("/push", ui.PushPage)
 	http.HandleFunc("/debug", ui.DebugPage)
 
@@ -37,19 +40,24 @@ func init() {
 	http.HandleFunc("/api/dashboard/get", dashboard.GetDashboard)
 	http.HandleFunc("/api/dashboard/delete", dashboard.DeleteDashboard)
 
+	http.HandleFunc("/api/user/new", users.NewUser)
+	http.HandleFunc("/api/user/list", users.ListUsers)
+
 	// Backward compatible with graphite:
 	// get a dashboard, and a tiny subset of the json renderer.
-	http.HandleFunc("/render", compat.Render)  // HU?
+	http.HandleFunc("/render", compat.Render) // HU?
 	http.HandleFunc("/render/", compat.Render)
 
 	// Task and queues handlers
 	http.HandleFunc(timeseries.SummarizeQueueUrl, timeseries.SummarizeTask)
 	http.HandleFunc(MapperUrl, Mapper)
+
+	timeseries.RegisterService()
+	endpoints.HandleHttp()
 }
 
 func checkUser(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	if ok, _, _ := users.IsAuthorized(r); !ok {
 		http.Error(w, "", http.StatusUnauthorized)
 		return
 	}

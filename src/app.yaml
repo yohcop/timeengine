@@ -7,8 +7,17 @@ handlers:
 - url: /static
   static_dir: timeengine/static/
 
-- url: /static3
-  static_dir: third_party/
+- url: /static3/bootstrap
+  static_dir: third_party/bootstrap/
+- url: /static3/dygraph
+  static_dir: third_party/dygraph/
+- url: /static3/js-expression-eval
+  static_dir: third_party/js-expression-eval/
+- url: /static3/jsonlint
+  static_dir: third_party/jsonlint/
 
 - url: /.*
+  script: _go_app
+
+- url: /_ah/spi/.*
   script: _go_app

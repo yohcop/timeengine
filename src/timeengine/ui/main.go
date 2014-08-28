@@ -34,8 +34,8 @@ type pushTmplData struct {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -46,8 +46,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func Dashboards(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -58,8 +58,8 @@ func Dashboards(w http.ResponseWriter, r *http.Request) {
 }
 
 func DashboardEditor(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -96,8 +96,8 @@ func DashboardEditor(w http.ResponseWriter, r *http.Request) {
 }
 
 func Namespaces(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -107,9 +107,22 @@ func Namespaces(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func Users(w http.ResponseWriter, r *http.Request) {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
+		return
+	}
+
+	rootTmpl.ExecuteTemplate(w, "users", &rootTmplData{
+		User:  user,
+		Login: users.LogoutURL(appengine.NewContext(r)),
+	})
+}
+
+
 func PushPage(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 
@@ -133,8 +146,8 @@ func PushPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func DebugPage(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	ok, user, _ := users.IsAuthorized(r)
+	if !ok {
 		return
 	}
 

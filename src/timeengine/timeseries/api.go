@@ -20,7 +20,7 @@ var _ = log.Println
 // Put ===================================================
 
 type Points struct {
-	T int64
+	T float64  // In seconds
 	M string
 	V float64
 }
@@ -32,8 +32,7 @@ type PutReq struct {
 }
 
 func PutDataPoints(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	if ok, _, _ := users.IsAuthorized(r); !ok {
 		return
 	}
 	req := PutReq{}
@@ -68,7 +67,7 @@ func PutDataPoints(w http.ResponseWriter, r *http.Request) {
 func ProcessInput(c appengine.Context, req *PutReq) error {
 	ps := make([]*points.P, 0)
 	for _, p := range req.Pts {
-		p := points.NewP(p.V, p.T, namespace.MetricName(req.Ns, p.M))
+		p := points.NewP(p.V, int64(p.T * 1000 * 1000), namespace.MetricName(req.Ns, p.M))
 		ps = append(ps, p)
 	}
 
@@ -106,10 +105,10 @@ type GetResp struct {
 }
 
 func GetDataPoints(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	if ok, _, _ := users.IsAuthorized(r); !ok {
 		return
 	}
+
 	req := GetReq{}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {

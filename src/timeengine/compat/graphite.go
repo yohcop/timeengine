@@ -18,8 +18,7 @@ import (
 var _ = log.Println
 
 func Render(w http.ResponseWriter, r *http.Request) {
-	user, err := users.AuthUser(w, r)
-	if user == nil || err != nil {
+	if ok, _, _ := users.IsAuthorized(r); !ok {
 		return
 	}
 

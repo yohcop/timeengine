@@ -2,7 +2,19 @@
 {{template "header" .}}
 
 <div class="container">
-<p>Welcome.</p>
+
+<h2>Push script</h2>
+
+<p>Download the <a href="/static/endpoint_pusher.py" download="endpoint_pusher.py">Pusher script</a>.</p>
+
+<p>use <code>python endpoint_pusher.py --help</code> to see some help.</p>
+<p>
+  Example usage:
+  <code>python endpoint_pusher.par --namespace=<i>my.namespace</i> --secret=<i>f14de</i> --port=1234</code>.
+  Then push data with: <code>my_command | nc localhost 12345</code>.
+</p>
+
+<h2>Documentation</h2>
 
 <p><a href="https://docs.google.com/document/d/1sHYhryktOHDaqT5s5c7Ue9zpfT3HMp13rj8I3FELTV8">User documentation</a></p>
 

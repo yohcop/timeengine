@@ -7,3 +7,12 @@ function listNamespaces(cb, errorcb) {
     error: errorcb,
   });
 }
+
+function listUsers(cb, errorcb) {
+  $.ajax({
+    url: "/api/user/list",
+  	dataType: 'json',
+  	success: cb,
+    error: errorcb,
+  });
+}
