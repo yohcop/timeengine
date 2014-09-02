@@ -35,7 +35,12 @@ type pushTmplData struct {
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	ok, user, _ := users.IsAuthorized(r)
+	if user == nil {
+		users.RedirectToLogin(w, r)
+		return
+	}
 	if !ok {
+		w.Write([]byte("Unauthorized"))
 		return
 	}
 

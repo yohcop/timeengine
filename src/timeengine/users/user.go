@@ -47,6 +47,18 @@ func IsUserAuthorized(r *http.Request, u *user.User) (bool, *User, error) {
 	return true, user, nil
 }
 
+func RedirectToLogin(w http.ResponseWriter, r *http.Request) error {
+	c := appengine.NewContext(r)
+	url, err := user.LoginURL(c, r.URL.String())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	w.Header().Set("Location", url)
+	w.WriteHeader(http.StatusFound)
+	return nil
+}
+
 // TODO: change r to appengine.Context. A lot of appengine.Context are created
 // everywhere in here, it's not necessary.
 func FindOrNewUser(appengineUser *user.User, r *http.Request) (*User, error) {
