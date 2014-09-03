@@ -330,7 +330,7 @@ function executeExpr(vars, expr) {
     if (maxExecuteErrors-- > 0) {
       console.log(expr.toString(), vars);
     }
-    return null;
+    return undefined;
   }
 }
 
@@ -359,7 +359,7 @@ function processData(dataByDate) {
       for (var e in g.expressions) {
         var ex = g.expressions[e];
         var res = executeExpr(vars, ex);
-        if (res) {
+        if (res !== undefined) {
           has_data = true;
           graphRow.push(res);
         } else {
